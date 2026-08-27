@@ -5,7 +5,7 @@ import io.cucumber.testng.CucumberOptions;
 
 @CucumberOptions(
     features = "classpath:features",
-    glue = "com.podsho.parabank.stepdefinitions",
+    glue = "com.podsho.parabank",
     plugin = {"pretty", 
               "html:target/cucumber-reports.html",
               "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"},
@@ -16,5 +16,4 @@ import io.cucumber.testng.CucumberOptions;
 )
 
 public class TestRunner extends AbstractTestNGCucumberTests{
-    
 }
