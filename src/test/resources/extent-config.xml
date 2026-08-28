@@ -1,0 +1,9 @@
+<extentreports>
+    <configuration>
+        <theme>dark</theme>
+        <documentEncoding>UTF-8</documentEncoding>
+        <documentTitle>Parabank API Test Report</documentTitle>
+        <reportName>Parabank API Automation Results</reportName>
+        <timelineEnabled>true</timelineEnabled>
+    </configuration>
+</extentreports>
