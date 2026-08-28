@@ -1,15 +1,15 @@
 package com.podsho.parabank.stepdefinitions;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
-
-import com.podsho.parabank.models.Account;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.podsho.parabank.client.ApiClient;
+import com.podsho.parabank.models.Account;
 import com.podsho.parabank.utils.ConfigReader;
+import com.podsho.parabank.utils.ScenarioContext;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -18,9 +18,13 @@ import io.restassured.response.Response;
 
 public class CreateAccountStepDefs {
 
+    private final ScenarioContext context;
     private String customerId;
     private String fromAccountId;
-    private Response response;
+
+    public CreateAccountStepDefs(ScenarioContext context) {
+        this.context = context;
+    }
 
     @Given("a customer logs in and has an existing funding account")
     public void a_customer_logs_in_and_has_an_existing_funding_account() {
@@ -32,7 +36,6 @@ public class CreateAccountStepDefs {
 
         Response accountResponse = ApiClient.get("/customers/" + customerId + "/accounts");
         fromAccountId = accountResponse.jsonPath().getString("[0].id");
-
     }
 
     @When("user creates a new account of type {string}")
@@ -44,17 +47,14 @@ public class CreateAccountStepDefs {
         params.put("newAccountType", typeCode);
         params.put("fromAccountId", fromAccountId);
 
-        response = ApiClient.postWithParams("/createAccount", params);
-
+        context.setResponse(ApiClient.postWithParams("/createAccount", params));
     }
 
     @Then("the account should be created successfully with status code {int}")
     public void the_account_should_be_created_successfully_with_status_code(Integer expectedStatusCode) {
-        assertThat(response.getStatusCode(), equalTo(expectedStatusCode));
+        assertThat(context.getResponse().getStatusCode(), equalTo(expectedStatusCode));
 
-        Account createdAccount = response.as(Account.class);
+        Account createdAccount = context.getResponse().as(Account.class);
         assertThat(createdAccount.getCustomerId(), equalTo(Integer.valueOf(customerId)));
-
     }
-
 }

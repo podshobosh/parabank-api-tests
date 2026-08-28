@@ -9,7 +9,9 @@ import io.cucumber.testng.CucumberOptions;
     plugin = {"pretty", 
               "html:target/cucumber-reports.html",
               "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"},
+    tags = "@wip",          
     monochrome = true,
+
     dryRun = false          
 
 
