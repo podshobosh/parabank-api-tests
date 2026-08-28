@@ -3,6 +3,7 @@ package com.podsho.parabank.client;
 import java.util.Map;
 
 import com.podsho.parabank.utils.ConfigReader;
+import com.podsho.parabank.utils.ApiLogContext;
 
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
@@ -15,8 +16,8 @@ public class ApiClient {
 
     private static RequestSpecification baseRequest() {
     return given()
-            .filter(new RequestLoggingFilter())
-            .filter(new ResponseLoggingFilter())
+            .filter(new RequestLoggingFilter(ApiLogContext.stream()))
+            .filter(new ResponseLoggingFilter(ApiLogContext.stream()))
             .accept("application/json");
 }
 
