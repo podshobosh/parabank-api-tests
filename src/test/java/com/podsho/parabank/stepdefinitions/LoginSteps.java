@@ -7,6 +7,7 @@ import io.restassured.response.Response;
 
 
 import com.podsho.parabank.utils.ConfigReader;
+import com.podsho.parabank.utils.Log;
 
 import org.testng.Assert;
 
@@ -28,11 +29,12 @@ public class LoginSteps {
 
     @When("user calls a login request using their username and password")
     public void user_calls_a_login_request_using_their_username_and_password() {
-        response = ApiClient.get("/services/bank/login/" + username + "/" + password);
+        response = ApiClient.get("/login/" + username + "/" + password);
     }
 
     @Then("status code should be {int}")
-    public void status_code_should_be(Integer int1) {
-        Assert.assertEquals(response.getStatusCode(), int1.intValue());
+    public void status_code_should_be(Integer expectedStatusCode) {
+        Assert.assertEquals(response.getStatusCode(), expectedStatusCode.intValue());
+        
     }
 }
