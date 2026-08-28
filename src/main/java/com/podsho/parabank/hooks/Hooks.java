@@ -1,6 +1,7 @@
 package com.podsho.parabank.hooks;
 
 import com.podsho.parabank.utils.Log;
+import org.apache.logging.log4j.LogManager;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -16,7 +17,7 @@ public class Hooks {
     @After
     public void afterScenario(Scenario scenario) {
         if (scenario.isFailed()) {
-            Log.error("FAILED " + scenario.getName());
+            LogManager.getLogger("failedScenarioLogger").error("FAILED " + scenario.getName());
         } else {
             Log.info("PASSED " + scenario.getName());
         }

@@ -10,7 +10,7 @@ import io.cucumber.testng.CucumberOptions;
               "html:target/cucumber-reports.html",
               "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"},
     monochrome = true,
-    dryRun = true          
+    dryRun = false          
 
 
 )
