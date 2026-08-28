@@ -5,8 +5,12 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import static io.restassured.RestAssured.given;
+
 import com.podsho.parabank.utils.ConfigReader;
+
 import org.testng.Assert;
+
+import com.podsho.parabank.client.ApiClient;
 
 
 public class LoginSteps {
@@ -24,9 +28,7 @@ public class LoginSteps {
 
     @When("user calls a login request using their username and password")
     public void user_calls_a_login_request_using_their_username_and_password() {
-        response = given()
-                    .when()
-                      .get(ConfigReader.getProperty("base.url")+ "/services/bank/login/" + username + "/" + password);
+        response = ApiClient.get("/services/bank/login/" + username + "/" + password);
     }
 
     @Then("status code should be {int}")
