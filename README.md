@@ -36,7 +36,13 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 docker run -d -p 8080:8080 parasoft/parabank
 ```
 
-Give it a minute to boot, then confirm it's up:
+Give it a minute to boot, then **seed the demo database**. ParaBank starts with no schema and no data, so every endpoint returns `400 Could not find customer #12212` until this runs:
+
+```bash
+curl -X POST http://localhost:8080/parabank/services/bank/initializeDB
+```
+
+Confirm it worked — this should return account XML rather than a 400:
 
 ```bash
 curl http://localhost:8080/parabank/services/bank/customers/12212/accounts
@@ -98,7 +104,6 @@ Four scenarios, five executions. Both positive and negative paths are covered; t
 src/
 ├── main/java/com/podsho/parabank/
 │   ├── client/ApiClient.java        # REST Assured wrapper — GET/POST/PUT/DELETE + query params
-│   ├── hooks/Hooks.java             # @Before / @After — log context lifecycle, failure attachment
 │   ├── models/Account.java          # Lombok POJO for serialization
 │   └── utils/
 │       ├── ApiLogContext.java       # Per-scenario request/response capture
@@ -109,6 +114,7 @@ src/
 │
 └── test/
     ├── java/com/podsho/parabank/
+    │   ├── hooks/Hooks.java          # @Before / @After — log context lifecycle, failure attachment
     │   ├── runners/TestRunner.java   # Cucumber + TestNG entry point
     │   └── stepdefinitions/          # Login, CreateAccount, AccountLookUp
     └── resources/
@@ -135,9 +141,13 @@ After a run:
 
 ```java
 if (scenario.isFailed()) {
-    scenario.attach(ApiLogContext.getLog(), "text/plain", "API Log");
+    String apiLog = asHtml(ApiLogContext.getLog());
+    scenario.attach(apiLog, "text/html", "API Log");
+    ExtentCucumberAdapter.addTestStepLog(apiLog);
 }
 ```
+
+It is attached twice deliberately: `scenario.attach` is Cucumber's own API and feeds the Cucumber HTML report, while the Extent adapter ignores scenario attachments entirely and has to be fed through its own call.
 
 A failed scenario therefore carries the exact HTTP exchange that caused it — no re-running with logging enabled to find out what happened. Passing scenarios stay clean, and the context is cleared per scenario so parallel-safe state is preserved.
 
@@ -155,7 +165,7 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 ## Roadmap
 
-- [ ] CI pipeline (GitHub Actions) publishing the Extent report as a build artifact
+- [x] CI pipeline (GitHub Actions) publishing the Extent report as a build artifact
 - [ ] Maven wrapper (`mvnw`) so the repo is clone-and-run without a local Maven install
 - [ ] JSON schema validation for response contract testing
 - [ ] Parallel execution via surefire thread configuration

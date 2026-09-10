@@ -25,16 +25,39 @@ jobs:
       - name: Start ParaBank
         run: docker run -d --name parabank -p 8080:8080 parasoft/parabank
 
-      - name: Wait for ParaBank to be ready
+      # Tomcat accepts connections well before the app is usable, and "/parabank/"
+      # answers with a 302, so treat any response other than curl's 000
+      # (could not connect) as up.
+      - name: Wait for ParaBank to accept connections
         run: |
           for i in $(seq 1 90); do
-            if curl -sf http://localhost:8080/parabank/services/bank/customers/12212/accounts > /dev/null; then
-              echo "ParaBank ready after ~$((i*2))s"
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/parabank/ || echo 000)
+            if [ "$code" != "000" ]; then
+              echo "Tomcat responding (HTTP $code) after ~$((i*2))s"
               exit 0
             fi
             sleep 2
           done
-          echo "ParaBank did not become ready in time"
+          echo "ParaBank never accepted connections"
+          docker logs parabank
+          exit 1
+
+      # ParaBank starts with no schema and no data, so every endpoint returns
+      # 400 until the demo database is created. This is test data provisioning
+      # over HTTP, not a database dependency of the suite.
+      - name: Seed the ParaBank database
+        run: |
+          curl -sf -X POST http://localhost:8080/parabank/services/bank/initializeDB
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://localhost:8080/parabank/services/bank/customers/12212/accounts || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Demo data ready after ~$((i*2))s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Database did not seed"
           docker logs parabank
           exit 1
 
