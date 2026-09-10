@@ -1,3 +1,4 @@
+@login
 Feature: Testing login functionality
 
     Scenario: User logs in using correct authentication

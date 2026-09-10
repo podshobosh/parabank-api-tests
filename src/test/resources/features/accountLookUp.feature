@@ -1,5 +1,5 @@
 Feature: Account lookup by account ID
-@wip
+@lookUp
     Scenario Outline: Account lookup returns expected status code
         Given an account id is "<accountId>"
         When the account is requested
