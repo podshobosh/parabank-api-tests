@@ -6,13 +6,16 @@ import io.cucumber.testng.CucumberOptions;
 @CucumberOptions(
     features = "classpath:features",
     glue = "com.podsho.parabank",
-    plugin = {"pretty", 
+    plugin = {"pretty",
               "html:target/cucumber-reports.html",
               "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"},
-    tags = "@wip",          
+    // No hardcoded tag filter: every scenario runs by default.
+    // Filter at runtime instead, e.g.
+    //   mvn test -Dcucumber.filter.tags="@wip"
+    //   mvn test -Dcucumber.filter.tags="@createAccount and not @wip"
     monochrome = true,
 
-    dryRun = false          
+    dryRun = false
 
 
 )
