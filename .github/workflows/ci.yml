@@ -45,15 +45,22 @@ jobs:
       # ParaBank starts with no schema and no data, so every endpoint returns
       # 400 until the demo database is created. This is test data provisioning
       # over HTTP, not a database dependency of the suite.
+      # The POST is retried rather than fired once: Tomcat answers on "/parabank/"
+      # before the JAX-RS services under "/parabank/services/" are deployed, so an
+      # early attempt can 404. Retry until the data endpoint actually returns 200.
       - name: Seed the ParaBank database
         run: |
-          curl -sf -X POST http://localhost:8080/parabank/services/bank/initializeDB
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
+            seed=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST http://localhost:8080/parabank/services/bank/initializeDB || echo 000)
             code=$(curl -s -o /dev/null -w "%{http_code}" \
               http://localhost:8080/parabank/services/bank/customers/12212/accounts || echo 000)
             if [ "$code" = "200" ]; then
-              echo "Demo data ready after ~$((i*2))s"
+              echo "Demo data ready after ~$((i*2))s (seed returned $seed)"
               exit 0
+            fi
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "  ~$((i*2))s - seed=$seed data=$code"
             fi
             sleep 2
           done
