@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Start ParaBank
+        run: docker run -d --name parabank -p 8080:8080 parasoft/parabank
+
+      - name: Wait for ParaBank to be ready
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8080/parabank/services/bank/customers/12212/accounts > /dev/null; then
+              echo "ParaBank ready after ~$((i*2))s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ParaBank did not become ready in time"
+          docker logs parabank
+          exit 1
+
+      - name: Run API tests
+        run: mvn -B test
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            test-output/
+            target/cucumber-reports.html
+            logs/
+          retention-days: 14
+
+      - name: Stop ParaBank
+        if: always()
+        run: docker rm -f parabank

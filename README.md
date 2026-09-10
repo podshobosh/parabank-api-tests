@@ -1,3 +1,4 @@
+![CI](https://github.com/podshobosh/parabank-api-tests/actions/workflows/ci.yml/badge.svg)
 # ParaBank API Test Automation
 
 BDD-style REST API test automation framework built against [ParaBank](https://github.com/parasoft/parabank), Parasoft's open-source demo banking application.
