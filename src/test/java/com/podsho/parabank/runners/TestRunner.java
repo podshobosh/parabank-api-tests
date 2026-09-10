@@ -11,8 +11,9 @@ import io.cucumber.testng.CucumberOptions;
               "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"},
     // No hardcoded tag filter: every scenario runs by default.
     // Filter at runtime instead, e.g.
-    //   mvn test -Dcucumber.filter.tags="@wip"
-    //   mvn test -Dcucumber.filter.tags="@createAccount and not @wip"
+    //   mvn test -Dcucumber.filter.tags="@login"
+    //   mvn test -Dcucumber.filter.tags="@login or @lookUp"
+    //   mvn test -Dcucumber.filter.tags="not @createAccount"
     monochrome = true,
 
     dryRun = false

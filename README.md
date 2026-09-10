@@ -58,12 +58,14 @@ mvn clean test
 Tags are **not** hardcoded in the runner — filter at runtime so the full suite stays the default:
 
 ```bash
-mvn test -Dcucumber.filter.tags="@wip"
+mvn test -Dcucumber.filter.tags="@login"
 ```
 
 ```bash
-mvn test -Dcucumber.filter.tags="@createAccount and not @wip"
+mvn test -Dcucumber.filter.tags="@login or @lookUp"
 ```
+
+Features are tagged by domain — `@login`, `@lookUp`, `@createAccount` — so any subset can be run in isolation.
 
 ### Pointing at a different environment
 
@@ -81,9 +83,9 @@ The environment-variable form uppercases the key and replaces dots with undersco
 
 | Feature | Scenarios | Tag | Covers |
 |---|---|---|---|
-| `login.feature` | 2 | — | Valid login (200); invalid credentials (400 + error message assertion) |
+| `login.feature` | 2 | `@login` | Valid login (200); invalid credentials (400 + error message assertion) |
 | `createAccount.feature` | 1 | `@createAccount` | Creating a CHECKING account from an existing funding account |
-| `accountLookUp.feature` | 1 outline, 2 examples | `@wip` | Account lookup by ID — existing (200) and non-existent (400) |
+| `accountLookUp.feature` | 1 outline, 2 examples | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400) |
 
 Four scenarios, five executions. Both positive and negative paths are covered; the lookup feature is data-driven via `Scenario Outline`.
 
