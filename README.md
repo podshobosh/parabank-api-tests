@@ -11,7 +11,7 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 
 | Layer | Technology |
 |---|---|
-| Language | Java 21 |
+| Language | Java 17 |
 | Build | Maven |
 | API client | REST Assured 6.0.1 |
 | BDD | Cucumber 7.33 (`cucumber-java`, `cucumber-testng`) |
@@ -26,7 +26,7 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 
 ## Prerequisites
 
-- **JDK 21+**
+- **JDK 17+**
 - **Maven 3.8+**
 - A running **ParaBank** instance (the system under test)
 

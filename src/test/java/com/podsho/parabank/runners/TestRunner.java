@@ -8,7 +8,9 @@ import io.cucumber.testng.CucumberOptions;
     glue = "com.podsho.parabank",
     plugin = {"pretty",
               "html:target/cucumber-reports.html",
-              "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"},
+              "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:",
+              // Writes failed scenarios (file:line) for FailedTestRunner to pick up
+              "rerun:target/failed_scenarios.txt"},
     // No hardcoded tag filter: every scenario runs by default.
     // Filter at runtime instead, e.g.
     //   mvn test -Dcucumber.filter.tags="@login"
