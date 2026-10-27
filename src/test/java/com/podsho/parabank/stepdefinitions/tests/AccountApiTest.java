@@ -1,9 +1,10 @@
 package com.podsho.parabank.stepdefinitions.tests;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.podsho.parabank.utils.ConfigReader;
@@ -28,7 +29,7 @@ public class AccountApiTest {
     }
 
     @Test 
-    public void negativeGetExistingAccount_ReturnAccountDetails(){
+    public void getAccount_nonExistentId_returns400WithNotFoundMessage(){
         given()
             .accept("application/json")
         .when()
@@ -40,7 +41,7 @@ public class AccountApiTest {
     }
 
     @Test 
-    public void negativeGetExistingAccount_NotANumber(){
+    public void getAccount_nonNumericId_returns404(){
         given()
             .accept("application/json")
         .when()
@@ -49,5 +50,41 @@ public class AccountApiTest {
             .statusCode(404)
             .body(equalTo(""));
     
+    }
+
+    @Test 
+    public void deposit_validAmount(){
+
+        // 1. balance before
+        float initBalance = given()
+                .accept("application/json")
+            .when()
+                .get(BASE + "/accounts/12345")
+            .then()
+                .body("balance", instanceOf(Float.class))
+                .extract().path("balance");
+        
+        // 2. deposit: fill in the endpoint, query params, status, and message check
+        given()
+            .accept("application/json")
+            .queryParam("accountId", 12345)
+            .queryParam("amount", 100)
+        .when()
+            .post(BASE + "/deposit")
+        .then()
+            .statusCode(200)   
+            .body(equalTo("Successfully deposited $100 to account #12345"));
+
+        
+       float newBalance = given()
+                .accept("application/json")
+            .when()
+                .get(BASE + "/accounts/12345")
+            .then()
+                .body("balance", instanceOf(Float.class))
+                .extract().path("balance");
+        
+        
+        Assert.assertEquals(newBalance, initBalance + 100, 0.001);
     }
 }
