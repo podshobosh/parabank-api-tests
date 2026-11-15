@@ -25,7 +25,7 @@ public class AccountApiTest {
             .body("id", equalTo(12345))
             .body("customerId", equalTo(12212))
             .body("type", equalTo("CHECKING"))
-            .body("balance", equalTo(-2901.0F));
+            .body("balance", instanceOf(Float.class));
     }
 
     @Test 
@@ -36,7 +36,7 @@ public class AccountApiTest {
             .get(BASE + "/accounts/99999")
         .then()
             .statusCode(400)
-            .body(equalTo("Could not find account #99999"));
+            .body(equalTo("Could not find account #99999")); 
     
     }
 

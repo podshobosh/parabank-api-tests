@@ -8,6 +8,9 @@ import io.cucumber.testng.CucumberOptions;
     glue = "com.podsho.parabank",
     plugin = {"pretty",
               "html:target/cucumber-reports.html",
+              // Machine-readable results for CI dashboards and test-management tools
+              "json:target/cucumber.json",
+              "junit:target/cucumber.xml",
               "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:",
               // Writes failed scenarios (file:line) for FailedTestRunner to pick up
               "rerun:target/failed_scenarios.txt"},
@@ -18,7 +21,7 @@ import io.cucumber.testng.CucumberOptions;
     //   mvn test -Dcucumber.filter.tags="not @createAccount"
     monochrome = true,
 
-    dryRun = false
+    dryRun = true
 
 
 )

@@ -11,6 +11,34 @@ import io.restassured.response.Response;
  */
 public class ScenarioContext {
 
+    private String accountId;
+    private double balance;
+    private double amount;
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String id) {
+        this.accountId = id;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
+     public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+
     private Response response;
 
     public Response getResponse() {

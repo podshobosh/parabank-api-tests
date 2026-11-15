@@ -79,6 +79,8 @@ jobs:
           path: |
             test-output/
             target/cucumber-reports.html
+            target/cucumber.json
+            target/cucumber.xml
             logs/
           retention-days: 14
 
