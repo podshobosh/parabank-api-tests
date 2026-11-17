@@ -5,13 +5,13 @@ import static org.hamcrest.Matchers.equalTo;
 
 import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.models.Account;
+import com.podsho.parabank.models.AccountType;
 import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
 
 public class CreateAccountStepDefs {
 
@@ -36,7 +36,8 @@ public class CreateAccountStepDefs {
 
     @When("user creates a new account of type {string}")
     public void user_creates_a_new_account_of_type(String accountType) {
-        context.setResponse(service.createAccount(customerId, accountType, fromAccountId));
+        context.setResponse(
+                service.createAccount(customerId, AccountType.valueOf(accountType.toUpperCase()), fromAccountId));
     }
 
     @Then("the account should be created successfully with status code {int}")

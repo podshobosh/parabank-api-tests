@@ -3,6 +3,8 @@ package com.podsho.parabank.client;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.podsho.parabank.models.AccountType;
+
 import io.restassured.response.Response;
 
 public class AccountService {
@@ -39,9 +41,9 @@ public class AccountService {
 
     }
 
-    public Response createAccount(String customerId, String accountType, String fromAccountId) {
+    public Response createAccount(String customerId, AccountType accountType, String fromAccountId) {
 
-        int typeCode = accountType.equalsIgnoreCase("SAVINGS") ? 1 : 0;
+        int typeCode = accountType.getCode();
 
         Map<String, Object> params = new HashMap<>();
         params.put("customerId", customerId);

@@ -2,6 +2,7 @@ package com.podsho.parabank.stepdefinitions;
 
 import org.testng.Assert;
 import com.podsho.parabank.client.AccountService;
+import com.podsho.parabank.models.AccountType;
 import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
 
@@ -27,7 +28,7 @@ public class DepositStepDefs {
 
         String customerId = service.login(username, password);
 
-        Response createResponse = service.createAccount(customerId, "CHECKING", service.getFirstAccountId(customerId));
+        Response createResponse = service.createAccount(customerId, AccountType.CHECKING, service.getFirstAccountId(customerId));
         context.setAccountId(createResponse.jsonPath().getString("id"));
     }
 
