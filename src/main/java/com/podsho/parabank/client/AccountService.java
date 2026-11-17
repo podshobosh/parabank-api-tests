@@ -8,7 +8,10 @@ import io.restassured.response.Response;
 public class AccountService {
 
     public double getBalance(String accountId) {
-        return ApiClient.get("/accounts/" + accountId).jsonPath().getDouble("balance");
+        Response getResponse = ApiClient.get("/accounts/" + accountId);
+        requireOk(getResponse, "Get balance");
+
+        return getResponse.jsonPath().getDouble("balance");
     }
 
     public Response deposit(String accountId, double amount) {
@@ -22,17 +25,15 @@ public class AccountService {
     public String login(String username, String password) {
 
         Response loginResponse = ApiClient.get("/login/" + username + "/" + password);
-
-        String customerId = loginResponse.jsonPath().getString("id");
         requireOk(loginResponse, "Login");
-        
+        String customerId = loginResponse.jsonPath().getString("id");
         return customerId;
     }
 
     public String getFirstAccountId(String customerId) {
 
         Response accountsResponse = ApiClient.get("/customers/" + customerId + "/accounts");
-        requireOk(accountsResponse, "Get First AccountId");
+        requireOk(accountsResponse, "Listing accounts");
 
         return accountsResponse.jsonPath().getString("[0].id");
 
@@ -54,9 +55,9 @@ public class AccountService {
 
     }
 
-    private void requireOk(Response response, String operational) {
+    private void requireOk(Response response, String operation) {
         if (response.getStatusCode() != 200) {
-            throw new IllegalStateException(operational + "  failed: expected status code is 200 but got "
+            throw new IllegalStateException(operation + " failed: expected status code is 200 but got "
                     + response.getStatusCode() + ": " + response.asString());
         }
     }
