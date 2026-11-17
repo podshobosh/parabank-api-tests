@@ -61,13 +61,8 @@ public class DepositStepDefs {
 
     @When("the customer deposits {double} into their account")
     public void the_customer_deposits_into_their_account(Double amount) {
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("accountId", context.getAccountId());
-        params.put("amount", amount);
-
         context.setAmount(amount);
-        context.setResponse(ApiClient.postWithParams("/deposit", params));
+        context.setResponse(service.deposit(context.getAccountId(), amount));
     }
 
     @Then("the deposit is confirmed")
