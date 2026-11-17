@@ -36,14 +36,4 @@ public class LoginSteps {
     public void user_calls_a_login_request_using_their_username_and_password() {
         context.setResponse(ApiClient.get("/login/" + username + "/" + password));
     }
-
-    @Then("status code should be {int}")
-    public void status_code_should_be(Integer expectedStatusCode) {
-        Assert.assertEquals(context.getResponse().getStatusCode(), expectedStatusCode.intValue());
-    }
-
-    @Then("the response message should be {string}")
-    public void the_response_message_should_be(String expectedResponseMsg) {
-        Assert.assertEquals(context.getResponse().asString().trim(), expectedResponseMsg);
-    }
 }
