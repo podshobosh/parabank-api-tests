@@ -1,12 +1,9 @@
 package com.podsho.parabank.stepdefinitions;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-import com.podsho.parabank.client.ApiClient;
+import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.models.Account;
 import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
@@ -14,16 +11,18 @@ import com.podsho.parabank.utils.ScenarioContext;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.restassured.response.Response;
+
 
 public class CreateAccountStepDefs {
 
     private final ScenarioContext context;
+    private final AccountService service;
     private String customerId;
     private String fromAccountId;
 
-    public CreateAccountStepDefs(ScenarioContext context) {
+    public CreateAccountStepDefs(ScenarioContext context, AccountService service) {
         this.context = context;
+        this.service = service;
     }
 
     @Given("a customer logs in and has an existing funding account")
@@ -31,23 +30,13 @@ public class CreateAccountStepDefs {
         String username = ConfigReader.getProperty("test.user");
         String password = ConfigReader.getProperty("test.pass");
 
-        Response loginResponse = ApiClient.get("/login/" + username + "/" + password);
-        customerId = loginResponse.jsonPath().getString("id");
-
-        Response accountResponse = ApiClient.get("/customers/" + customerId + "/accounts");
-        fromAccountId = accountResponse.jsonPath().getString("[0].id");
+        customerId = service.login(username, password);
+        fromAccountId = service.getFirstAccountId(customerId);
     }
 
     @When("user creates a new account of type {string}")
     public void user_creates_a_new_account_of_type(String accountType) {
-        int typeCode = accountType.equalsIgnoreCase("SAVINGS") ? 1 : 0;
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("customerId", customerId);
-        params.put("newAccountType", typeCode);
-        params.put("fromAccountId", fromAccountId);
-
-        context.setResponse(ApiClient.postWithParams("/createAccount", params));
+        context.setResponse(service.createAccount(customerId, accountType, fromAccountId));
     }
 
     @Then("the account should be created successfully with status code {int}")

@@ -1,12 +1,7 @@
 package com.podsho.parabank.stepdefinitions;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.testng.Assert;
-
 import com.podsho.parabank.client.AccountService;
-import com.podsho.parabank.client.ApiClient;
 import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
 
@@ -16,8 +11,6 @@ import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 
 public class DepositStepDefs {
-
-    private static final int CHECKING = 0;
 
     private final ScenarioContext context;
     private final AccountService service;
@@ -33,20 +26,8 @@ public class DepositStepDefs {
         String password = ConfigReader.getProperty("test.pass");
 
         String customerId = service.login(username, password);
-        
-        // an existing account funds the new one (ParaBank requires a source account)
-        Response accountsResponse = ApiClient.get("/customers/" + customerId + "/accounts");
-        Assert.assertEquals(accountsResponse.getStatusCode(), 200, "could not list accounts");
-        String fundingAccountId = accountsResponse.jsonPath().getString("[0].id");
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("customerId", customerId);
-        params.put("newAccountType", CHECKING);
-        params.put("fromAccountId", fundingAccountId);
-
-        Response createResponse = ApiClient.postWithParams("/createAccount", params);
-        Assert.assertEquals(createResponse.getStatusCode(), 200, "account creation failed");
-
+        Response createResponse = service.createAccount(customerId, "CHECKING", service.getFirstAccountId(customerId));
         context.setAccountId(createResponse.jsonPath().getString("id"));
     }
 

@@ -1,7 +1,6 @@
 package com.podsho.parabank.stepdefinitions;
 
 import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
 import com.podsho.parabank.client.ApiClient;
@@ -9,7 +8,7 @@ import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
 import com.podsho.parabank.utils.TestDataHelper;
 
-import org.testng.Assert;
+
 
 public class LoginSteps {
 
