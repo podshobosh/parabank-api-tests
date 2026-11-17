@@ -32,10 +32,8 @@ public class DepositStepDefs {
         String username = ConfigReader.getProperty("test.user");
         String password = ConfigReader.getProperty("test.pass");
 
-        Response loginResponse = ApiClient.get("/login/" + username + "/" + password);
-        Assert.assertEquals(loginResponse.getStatusCode(), 200, "login failed");
-        String customerId = loginResponse.jsonPath().getString("id");
-
+        String customerId = service.login(username, password);
+        
         // an existing account funds the new one (ParaBank requires a source account)
         Response accountsResponse = ApiClient.get("/customers/" + customerId + "/accounts");
         Assert.assertEquals(accountsResponse.getStatusCode(), 200, "could not list accounts");

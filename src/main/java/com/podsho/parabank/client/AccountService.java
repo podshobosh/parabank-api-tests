@@ -18,4 +18,18 @@ public class AccountService {
         params.put("amount", amount);
         return ApiClient.postWithParams("/deposit", params);
     }
+
+    public String login(String username, String password) {
+
+        Response loginResponse = ApiClient.get("/login/" + username + "/" + password);
+
+        if (loginResponse.getStatusCode() != 200) {
+            throw new IllegalStateException(
+                    "Expect status code is 200 but got " + loginResponse.getStatusCode() + ": " + loginResponse.asString());
+        }
+
+        String customerId = loginResponse.jsonPath().getString("id");
+        return customerId;
+    }
+
 }
