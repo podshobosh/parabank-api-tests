@@ -17,10 +17,11 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 | BDD | Cucumber 7.33 (`cucumber-java`, `cucumber-testng`) |
 | Test engine | TestNG 7.12 |
 | Dependency injection | Cucumber PicoContainer |
-| Reporting | ExtentReports 5.1.2 (Cucumber 7 adapter) |
+| Reporting | ExtentReports 5.1.2 (Cucumber 7 adapter), Cucumber HTML/JSON/JUnit |
 | Logging | Log4j2 |
 | JSON | Jackson Databind |
 | Boilerplate | Lombok |
+| CI | GitHub Actions |
 
 ---
 
@@ -33,7 +34,7 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 ### Start ParaBank
 
 ```bash
-docker run -d -p 8080:8080 parasoft/parabank
+docker run -d --name parabank -p 8080:8080 parasoft/parabank
 ```
 
 Give it a minute to boot, then **seed the demo database**. ParaBank starts with no schema and no data, so every endpoint returns `400 Could not find customer #12212` until this runs:
@@ -54,7 +55,7 @@ The default `base.url` in `config.properties` points at `http://localhost:8080/p
 
 ## Running the tests
 
-Run everything:
+Run everything (the default run skips scenarios tagged `@known-defect`, see below):
 
 ```bash
 mvn clean test
@@ -62,17 +63,34 @@ mvn clean test
 
 ### Filtering by tag
 
-Tags are **not** hardcoded in the runner — filter at runtime so the full suite stays the default:
+Tags are **not** hardcoded in the runner. The default filter lives in `src/test/resources/cucumber.properties` (`not @known-defect`), and any `-Dcucumber.filter.tags` on the command line overrides it:
 
 ```bash
-mvn test -Dcucumber.filter.tags="@login"
+mvn test -Dcucumber.filter.tags="@smoke"
 ```
 
 ```bash
 mvn test -Dcucumber.filter.tags="@login or @lookUp"
 ```
 
-Features are tagged by domain — `@login`, `@lookUp`, `@createAccount` — so any subset can be run in isolation.
+```bash
+mvn test -Dcucumber.filter.tags="@deposit and not @known-defect"
+```
+
+| Tag | Meaning |
+|---|---|
+| `@login`, `@lookUp`, `@createAccount`, `@deposit` | Feature domain |
+| `@smoke` | Fast happy-path checks |
+| `@regression` | Full behaviour coverage for the feature |
+| `@known-defect` | Correct expected behaviour that ParaBank currently violates; excluded by default |
+
+### Re-running failures
+
+The runner writes failed scenarios to `target/failed_scenarios.txt`. Re-run just those (without `clean`, or the file is wiped first):
+
+```bash
+mvn test -Dtest=FailedTestRunner
+```
 
 ### Pointing at a different environment
 
@@ -88,13 +106,33 @@ The environment-variable form uppercases the key and replaces dots with undersco
 
 ## Test coverage
 
-| Feature | Scenarios | Tag | Covers |
+| Feature | Scenarios | Tags | Covers |
 |---|---|---|---|
 | `login.feature` | 2 | `@login` | Valid login (200); invalid credentials (400 + error message assertion) |
 | `createAccount.feature` | 1 | `@createAccount` | Creating a CHECKING account from an existing funding account |
 | `accountLookUp.feature` | 1 outline, 2 examples | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400) |
+| `depositValidAmount.feature` | 1 scenario, 1 outline (2 examples) | `@deposit`, `@smoke`, `@regression`, `@known-defect` | Valid deposit: confirmation message and balance increases by exactly the amount. Invalid amounts (`0.00`, `-50.00`): expected to be rejected, balance unchanged (see known defects) |
 
-Four scenarios, five executions. Both positive and negative paths are covered; the lookup feature is data-driven via `Scenario Outline`.
+The default run executes 6 scenarios. The 2 `@known-defect` examples run only on request.
+
+The deposit feature creates its own checking account in a `Background` step, so it never depends on the state of a shared seed account, and it asserts the *change* in balance instead of an absolute value.
+
+---
+
+## Known defects found in ParaBank
+
+These are findings about the system under test, not framework bugs.
+
+| Finding | Evidence | Test |
+|---|---|---|
+| `/deposit` accepts zero and negative amounts | HTTP 200 for `amount=0.0` and `amount=-50.0`; the `-50.0` call lowered the account balance by 50 (a deposit acting as a withdrawal) | `Customer cannot deposit an invalid amount`, tagged `@known-defect` |
+| Login credentials travel in the URL | `GET /login/{username}/{password}` | Observed in `LoginSteps`; no dedicated test yet |
+
+The deposit scenario is written for the **correct** behaviour and quarantined with a tag, so CI stays meaningful and the test starts guarding the behaviour as soon as the API is fixed. Run it on demand to see the failure:
+
+```bash
+mvn test -Dtest=TestRunner -Dcucumber.filter.tags="@known-defect"
+```
 
 ---
 
@@ -104,9 +142,9 @@ Four scenarios, five executions. Both positive and negative paths are covered; t
 src/
 ├── main/java/com/podsho/parabank/
 │   ├── client/ApiClient.java        # REST Assured wrapper — GET/POST/PUT/DELETE + query params
-│   ├── models/Account.java          # Lombok POJO for serialization
+│   ├── models/Account.java          # Lombok POJO for deserialization
 │   └── utils/
-│       ├── ApiLogContext.java       # Per-scenario request/response capture
+│       ├── ApiLogContext.java       # Per-thread request/response capture
 │       ├── ConfigReader.java        # Layered config resolution
 │       ├── Log.java                 # Log4j2 facade
 │       ├── ScenarioContext.java     # State shared across step definitions (DI-scoped)
@@ -114,13 +152,19 @@ src/
 │
 └── test/
     ├── java/com/podsho/parabank/
-    │   ├── hooks/Hooks.java          # @Before / @After — log context lifecycle, failure attachment
-    │   ├── runners/TestRunner.java   # Cucumber + TestNG entry point
-    │   └── stepdefinitions/          # Login, CreateAccount, AccountLookUp
+    │   ├── hooks/Hooks.java              # @Before / @After — log context lifecycle, failure attachment
+    │   ├── runners/
+    │   │   ├── TestRunner.java           # Cucumber + TestNG entry point
+    │   │   └── FailedTestRunner.java     # Re-runs scenarios that failed last time
+    │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit
     └── resources/
-        ├── features/                 # Gherkin specifications
-        ├── extent.properties         # ExtentReports configuration
-        └── log4j2.xml                # Logging configuration
+        ├── features/                     # Gherkin specifications
+        ├── cucumber.properties           # Default tag filter
+        ├── extent.properties             # ExtentReports configuration and system info
+        ├── extent-config.xml             # Extent theme and titles
+        └── log4j2.xml                    # Logging configuration
+
+.github/workflows/ci.yml                  # Starts ParaBank, seeds it, runs the suite, uploads reports
 ```
 
 ---
@@ -131,8 +175,9 @@ After a run:
 
 | Output | Location |
 |---|---|
-| ExtentReports HTML | `test-output/` |
-| Cucumber HTML | `target/cucumber-reports.html` |
+| ExtentReports HTML (primary) | `test-output/ExtentReport/extent-report.html` |
+| Cucumber HTML (fallback) | `target/cucumber-reports.html` |
+| Cucumber JSON / JUnit XML (for CI tooling) | `target/cucumber.json`, `target/cucumber.xml` |
 | Execution logs | `logs/` |
 
 ### Failure diagnostics
@@ -149,7 +194,18 @@ if (scenario.isFailed()) {
 
 It is attached twice deliberately: `scenario.attach` is Cucumber's own API and feeds the Cucumber HTML report, while the Extent adapter ignores scenario attachments entirely and has to be fed through its own call.
 
-A failed scenario therefore carries the exact HTTP exchange that caused it — no re-running with logging enabled to find out what happened. Passing scenarios stay clean, and the context is cleared per scenario so parallel-safe state is preserved.
+A failed scenario therefore carries the exact HTTP exchange that caused it — no re-running with logging enabled to find out what happened. Passing scenarios stay clean, and the buffer is a `ThreadLocal` cleared per scenario, so it is safe for parallel execution.
+
+---
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request to `main`, and on manual dispatch:
+
+1. Starts ParaBank in Docker and waits for it to accept connections.
+2. Seeds the demo database, retrying until the data endpoint returns 200.
+3. Runs `mvn -B test`.
+4. Uploads the reports (`test-output/`, Cucumber HTML/JSON/XML, `logs/`) as a build artifact, even when tests fail.
 
 ---
 
@@ -161,12 +217,20 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 **Config precedence over config files.** Environment switching happens through system properties or environment variables, so the same artifact runs against local, CI, or a hosted instance unchanged.
 
+**Tests own their data and assert deltas.** Scenarios create the account they need and assert how a value changes (balance after = balance before + amount) rather than comparing to a hardcoded number. An earlier version asserted a fixed balance and broke CI the moment another test changed it.
+
+**Known product defects are quarantined, not hidden.** A scenario that documents correct behaviour the system violates is tagged `@known-defect` and excluded from the default run, instead of being deleted or rewritten to pass.
+
 ---
 
 ## Roadmap
 
 - [x] CI pipeline (GitHub Actions) publishing the Extent report as a build artifact
+- [x] Machine-readable results (Cucumber JSON and JUnit XML)
+- [ ] Service layer (`AccountService` etc.) on a shared `RequestSpecification`, injected via PicoContainer
+- [ ] Shared steps (`status code should be`) moved out of `LoginSteps` into a common class
 - [ ] Maven wrapper (`mvnw`) so the repo is clone-and-run without a local Maven install
 - [ ] JSON schema validation for response contract testing
+- [ ] Database verification of API effects (JDBC against ParaBank's HSQLDB)
 - [ ] Parallel execution via surefire thread configuration
 - [ ] Expanded coverage: fund transfers, bill pay, transaction search
