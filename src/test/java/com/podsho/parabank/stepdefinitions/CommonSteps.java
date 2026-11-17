@@ -14,7 +14,7 @@ public class CommonSteps {
         this.context = context;
     }
 
-    @Then("status code should be{int}")
+    @Then("status code should be {int}")
     public void status_code_should_be(Integer expectedStatusCode) {
         Assert.assertEquals(context.getResponse().getStatusCode(), expectedStatusCode.intValue());
     }
