@@ -23,24 +23,16 @@ public class AccountService {
 
         Response loginResponse = ApiClient.get("/login/" + username + "/" + password);
 
-        if (loginResponse.getStatusCode() != 200) {
-            throw new IllegalStateException(
-                    "Login: Expect status code is 200 but got " + loginResponse.getStatusCode() + ": "
-                            + loginResponse.asString());
-        }
-
         String customerId = loginResponse.jsonPath().getString("id");
+        requireOk(loginResponse, "Login");
+        
         return customerId;
     }
 
     public String getFirstAccountId(String customerId) {
 
         Response accountsResponse = ApiClient.get("/customers/" + customerId + "/accounts");
-        if (accountsResponse.getStatusCode() != 200) {
-            throw new IllegalStateException(
-                    "Listing accounts: Expect status code is 200 but got " + accountsResponse.getStatusCode() + ": "
-                            + accountsResponse.asString());
-        }
+        requireOk(accountsResponse, "Get First AccountId");
 
         return accountsResponse.jsonPath().getString("[0].id");
 
@@ -55,8 +47,18 @@ public class AccountService {
         params.put("newAccountType", typeCode);
         params.put("fromAccountId", fromAccountId);
 
-        return ApiClient.postWithParams("/createAccount", params);
+        Response createResponse = ApiClient.postWithParams("/createAccount", params);
 
+        requireOk(createResponse, "Create Bank Account");
+        return createResponse;
+
+    }
+
+    private void requireOk(Response response, String operational) {
+        if (response.getStatusCode() != 200) {
+            throw new IllegalStateException(operational + "  failed: expected status code is 200 but got "
+                    + response.getStatusCode() + ": " + response.asString());
+        }
     }
 
 }
