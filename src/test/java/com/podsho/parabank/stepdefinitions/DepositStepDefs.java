@@ -82,9 +82,23 @@ public class DepositStepDefs {
 
     @Then("the account balance has increased by {double}")
     public void the_account_balance_has_increased_by(Double amount) {
-        Response getAccountInfo = ApiClient.get("/accounts/" + context.getAccountId());
-        double newBalance = getAccountInfo.jsonPath().getDouble("balance");
-        Assert.assertEquals(newBalance, context.getBalance() + amount, 0.001);
+        Assert.assertEquals(currentBalance(), context.getBalance() + amount, 0.001);
+    }
+
+    @Then("the deposit is rejected")
+    public void the_deposit_is_rejected() {
+        int status = context.getResponse().getStatusCode();
+        Assert.assertTrue(status >= 400 && status < 500,
+                "expected a 4xx rejection but got " + status + ": " + context.getResponse().asString());
+    }
+
+    @Then("the account balance is unchanged")
+    public void the_account_balance_is_unchanged() {
+        Assert.assertEquals(currentBalance(), context.getBalance(), 0.001);
+    }
+
+    private double currentBalance() {
+        return ApiClient.get("/accounts/" + context.getAccountId()).jsonPath().getDouble("balance");
     }
 
 }

@@ -19,10 +19,7 @@ import io.cucumber.testng.CucumberOptions;
     //   mvn test -Dcucumber.filter.tags="@login"
     //   mvn test -Dcucumber.filter.tags="@login or @lookUp"
     //   mvn test -Dcucumber.filter.tags="not @createAccount"
-    monochrome = true,
-
-    dryRun = true
-
+    monochrome = true
 
 )
 
