@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.testng.Assert;
 
+import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.client.ApiClient;
 import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
@@ -19,9 +20,11 @@ public class DepositStepDefs {
     private static final int CHECKING = 0;
 
     private final ScenarioContext context;
+    private final AccountService service;
 
-    public DepositStepDefs(ScenarioContext context) {
+    public DepositStepDefs(ScenarioContext context, AccountService service) {
         this.context = context;
+        this.service = service;
     }
 
     @Given("a customer with a checking account")
@@ -51,15 +54,9 @@ public class DepositStepDefs {
 
     @Given("the account balance is recorded")
     public void the_account_balance_is_recorded() {
-        // GET /accounts/{id}
-        Response getAccountInfo = ApiClient.get("/accounts/" + context.getAccountId());
 
-        // read balance with JsonPath
-        double balance = getAccountInfo.jsonPath().getDouble("balance");
-
-        // context.setBalance(...)
+        double balance = service.getBalance(context.getAccountId());
         context.setBalance(balance);
-        // System.out.println("initial balance = " + context.getBalance());
     }
 
     @When("the customer deposits {double} into their account")
@@ -82,7 +79,7 @@ public class DepositStepDefs {
 
     @Then("the account balance has increased by {double}")
     public void the_account_balance_has_increased_by(Double amount) {
-        Assert.assertEquals(currentBalance(), context.getBalance() + amount, 0.001);
+        Assert.assertEquals(service.getBalance(context.getAccountId()), context.getBalance() + amount, 0.001);
     }
 
     @Then("the deposit is rejected")
@@ -94,11 +91,7 @@ public class DepositStepDefs {
 
     @Then("the account balance is unchanged")
     public void the_account_balance_is_unchanged() {
-        Assert.assertEquals(currentBalance(), context.getBalance(), 0.001);
-    }
-
-    private double currentBalance() {
-        return ApiClient.get("/accounts/" + context.getAccountId()).jsonPath().getDouble("balance");
+        Assert.assertEquals(service.getBalance(context.getAccountId()), context.getBalance(), 0.001);
     }
 
 }
