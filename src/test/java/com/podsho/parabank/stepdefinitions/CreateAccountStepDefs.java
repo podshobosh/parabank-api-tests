@@ -17,7 +17,7 @@ public class CreateAccountStepDefs {
 
     private final ScenarioContext context;
     private final AccountService service;
-    private String customerId;
+
     private String fromAccountId;
 
     public CreateAccountStepDefs(ScenarioContext context, AccountService service) {
@@ -30,14 +30,15 @@ public class CreateAccountStepDefs {
         String username = ConfigReader.getProperty("test.user");
         String password = ConfigReader.getProperty("test.pass");
 
-        customerId = service.loginAndGetCustomerId(username, password);
-        fromAccountId = service.getFirstAccountId(customerId);
+        context.setCustomerId(service.loginAndGetCustomerId(username, password));
+        fromAccountId = service.getFirstAccountId((context.getCustomerId()));
     }
 
     @When("user creates a new account of type {string}")
     public void user_creates_a_new_account_of_type(String accountType) {
         context.setResponse(
-                service.createAccount(customerId, AccountType.valueOf(accountType.toUpperCase()), fromAccountId));
+                service.createAccount(context.getCustomerId(), AccountType.valueOf(accountType.toUpperCase()),
+                        fromAccountId));
     }
 
     @Then("the account should be created successfully with status code {int}")
@@ -45,6 +46,6 @@ public class CreateAccountStepDefs {
         assertThat(context.getResponse().getStatusCode(), equalTo(expectedStatusCode));
 
         Account createdAccount = context.getResponse().as(Account.class);
-        assertThat(createdAccount.getCustomerId(), equalTo(Integer.valueOf(customerId)));
+        assertThat(createdAccount.getCustomerId(), equalTo(Integer.valueOf(context.getCustomerId())));
     }
 }

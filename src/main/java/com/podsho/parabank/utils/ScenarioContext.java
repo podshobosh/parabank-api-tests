@@ -14,8 +14,17 @@ import io.restassured.response.Response;
 public class ScenarioContext {
 
     private String accountId;
+    private String customerId;
     private BigDecimal balance;
     private BigDecimal amount;
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
 
     public String getAccountId() {
         return accountId;
@@ -33,7 +42,7 @@ public class ScenarioContext {
         this.balance = balance;
     }
 
-     public BigDecimal getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
