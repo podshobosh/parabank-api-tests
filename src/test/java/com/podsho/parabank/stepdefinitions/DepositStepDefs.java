@@ -72,4 +72,9 @@ public class DepositStepDefs {
         Assert.assertEquals(service.getBalance(context.getAccountId()).compareTo(context.getBalance()), 0);
 
     }
+
+    @When("the customer deposits {bigdecimal} into account {string}")
+    public void the_customer_deposits_into_account(BigDecimal amount, String accountId) {
+       context.setResponse(service.deposit(accountId, amount));
+    }
 }

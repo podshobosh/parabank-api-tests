@@ -13,10 +13,10 @@ Feature: Deposit funds into an account
     When the customer deposits 200.00 into their account
     Then the deposit is confirmed
     And the account balance has increased by 200.00
-
   # ParaBank returns 200 and applies these amounts (a -50 deposit lowers the balance),
   # so this scenario fails until the API validates input. Excluded from the default
   # run via cucumber.properties; run it with -Dcucumber.filter.tags="@known-defect".
+
   @known-defect
   Scenario Outline: Customer cannot deposit an invalid amount
     Given the account balance is recorded
@@ -28,3 +28,8 @@ Feature: Deposit funds into an account
       | amount |
       |   0.00 |
       | -50.00 |
+  
+  Scenario: Customer cannot deposit into a non-existing account
+    When the customer deposits 200.00 into account "99990"
+    Then the deposit is rejected
+    And the response message should be "Could not find account number 99990"
