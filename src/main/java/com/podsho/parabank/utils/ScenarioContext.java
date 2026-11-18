@@ -1,5 +1,7 @@
 package com.podsho.parabank.utils;
 
+import java.math.BigDecimal;
+
 import io.restassured.response.Response;
 
 /**
@@ -12,8 +14,8 @@ import io.restassured.response.Response;
 public class ScenarioContext {
 
     private String accountId;
-    private double balance;
-    private double amount;
+    private BigDecimal balance;
+    private BigDecimal amount;
 
     public String getAccountId() {
         return accountId;
@@ -23,19 +25,19 @@ public class ScenarioContext {
         this.accountId = id;
     }
 
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 
-     public double getAmount() {
+     public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 

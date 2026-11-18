@@ -1,5 +1,6 @@
 package com.podsho.parabank.client;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,14 +10,14 @@ import io.restassured.response.Response;
 
 public class AccountService {
 
-    public double getBalance(String accountId) {
+    public BigDecimal getBalance(String accountId) {
         Response getResponse = ApiClient.get("/accounts/" + accountId);
         requireOk(getResponse, "Get balance");
 
-        return getResponse.jsonPath().getDouble("balance");
+        return new BigDecimal(getResponse.jsonPath().getString("balance"));
     }
 
-    public Response deposit(String accountId, double amount) {
+    public Response deposit(String accountId, BigDecimal amount) {
 
         Map<String, Object> params = new HashMap<>();
         params.put("accountId", accountId);

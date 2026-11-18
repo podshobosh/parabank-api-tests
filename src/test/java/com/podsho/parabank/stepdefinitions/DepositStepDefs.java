@@ -1,5 +1,7 @@
 package com.podsho.parabank.stepdefinitions;
 
+import java.math.BigDecimal;
+
 import org.testng.Assert;
 import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.models.AccountType;
@@ -28,19 +30,20 @@ public class DepositStepDefs {
 
         String customerId = service.login(username, password);
 
-        Response createResponse = service.createAccount(customerId, AccountType.CHECKING, service.getFirstAccountId(customerId));
+        Response createResponse = service.createAccount(customerId, AccountType.CHECKING,
+                service.getFirstAccountId(customerId));
         context.setAccountId(createResponse.jsonPath().getString("id"));
     }
 
     @Given("the account balance is recorded")
     public void the_account_balance_is_recorded() {
 
-        double balance = service.getBalance(context.getAccountId());
+        BigDecimal balance = service.getBalance(context.getAccountId());
         context.setBalance(balance);
     }
 
-    @When("the customer deposits {double} into their account")
-    public void the_customer_deposits_into_their_account(Double amount) {
+    @When("the customer deposits {bigdecimal} into their account")
+    public void the_customer_deposits_into_their_account(BigDecimal amount) {
         context.setAmount(amount);
         context.setResponse(service.deposit(context.getAccountId(), amount));
     }
@@ -52,9 +55,9 @@ public class DepositStepDefs {
                 "Successfully deposited $" + context.getAmount() + " to account #" + context.getAccountId());
     }
 
-    @Then("the account balance has increased by {double}")
-    public void the_account_balance_has_increased_by(Double amount) {
-        Assert.assertEquals(service.getBalance(context.getAccountId()), context.getBalance() + amount, 0.001);
+    @Then("the account balance has increased by {bigdecimal}")
+    public void the_account_balance_has_increased_by(BigDecimal amount) {
+        Assert.assertEquals(service.getBalance(context.getAccountId()).compareTo(context.getBalance().add(amount)), 0);
     }
 
     @Then("the deposit is rejected")
@@ -66,7 +69,7 @@ public class DepositStepDefs {
 
     @Then("the account balance is unchanged")
     public void the_account_balance_is_unchanged() {
-        Assert.assertEquals(service.getBalance(context.getAccountId()), context.getBalance(), 0.001);
-    }
+        Assert.assertEquals(service.getBalance(context.getAccountId()).compareTo(context.getBalance()), 0);
 
+    }
 }
