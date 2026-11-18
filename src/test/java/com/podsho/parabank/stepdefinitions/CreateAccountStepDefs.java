@@ -1,7 +1,6 @@
 package com.podsho.parabank.stepdefinitions;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import org.testng.Assert;
 
 import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.models.Account;
@@ -43,9 +42,9 @@ public class CreateAccountStepDefs {
 
     @Then("the account should be created successfully with status code {int}")
     public void the_account_should_be_created_successfully_with_status_code(Integer expectedStatusCode) {
-        assertThat(context.getResponse().getStatusCode(), equalTo(expectedStatusCode));
+        Assert.assertEquals(context.getResponse().getStatusCode(), expectedStatusCode.intValue());
 
         Account createdAccount = context.getResponse().as(Account.class);
-        assertThat(createdAccount.getCustomerId(), equalTo(Integer.valueOf(context.getCustomerId())));
+        Assert.assertEquals(createdAccount.getCustomerId(), Integer.parseInt(context.getCustomerId()));
     }
 }
