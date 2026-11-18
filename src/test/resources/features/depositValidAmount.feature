@@ -13,6 +13,7 @@ Feature: Deposit funds into an account
     When the customer deposits 200.00 into their account
     Then the deposit is confirmed
     And the account balance has increased by 200.00
+    Then the deposit is recorder in the database
   # ParaBank returns 200 and applies these amounts (a -50 deposit lowers the balance),
   # so this scenario fails until the API validates input. Excluded from the default
   # run via cucumber.properties; run it with -Dcucumber.filter.tags="@known-defect".

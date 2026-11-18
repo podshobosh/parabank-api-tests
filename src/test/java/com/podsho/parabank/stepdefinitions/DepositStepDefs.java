@@ -1,13 +1,17 @@
 package com.podsho.parabank.stepdefinitions;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 
 import org.testng.Assert;
 import com.podsho.parabank.client.AccountService;
+import com.podsho.parabank.db.Transaction;
+import com.podsho.parabank.db.TransactionDao;
 import com.podsho.parabank.models.AccountType;
 import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
 
+import groovyjarjarantlr4.v4.parse.ANTLRParser.labeledAlt_return;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -17,10 +21,12 @@ public class DepositStepDefs {
 
     private final ScenarioContext context;
     private final AccountService service;
+    private final TransactionDao transactionDao;
 
-    public DepositStepDefs(ScenarioContext context, AccountService service) {
+    public DepositStepDefs(ScenarioContext context, AccountService service, TransactionDao transactionDao) {
         this.context = context;
         this.service = service;
+        this.transactionDao = transactionDao;
     }
 
     @Given("a customer with a checking account")
@@ -75,6 +81,15 @@ public class DepositStepDefs {
 
     @When("the customer deposits {bigdecimal} into account {string}")
     public void the_customer_deposits_into_account(BigDecimal amount, String accountId) {
-       context.setResponse(service.deposit(accountId, amount));
+        context.setResponse(service.deposit(accountId, amount));
+    }
+
+    @Then("the deposit is recorder in the database")
+    public void the_deposit_is_recorder_in_the_database() throws SQLException {
+        Transaction latest = transactionDao.getLatest(context.getAccountId());
+
+        Assert.assertEquals(latest.getType(), 0);
+        Assert.assertEquals(latest.getAmount().compareTo(context.getAmount()), 0);
+        Assert.assertEquals(latest.getDescription(), "Deposit via Web Service");
     }
 }
