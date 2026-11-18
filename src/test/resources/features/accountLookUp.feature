@@ -9,7 +9,7 @@ Feature: Account lookup by account ID
             | accountId | status |
             | 12345     | 200    |
             | 99999     | 400    |
-            
+    @lookUp        
     Scenario: Existing account matches the account schema
         Given an account id is "12345"
         When the account is requested
