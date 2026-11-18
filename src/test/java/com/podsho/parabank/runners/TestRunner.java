@@ -16,7 +16,7 @@ import io.cucumber.testng.CucumberOptions;
               "rerun:target/failed_scenarios.txt"},
     // No hardcoded tag filter: every scenario runs by default.
     // Filter at runtime instead, e.g.
-    //   mvn test -Dcucumber.filter.tags="@wip"
+    //   mvn test -Dcucumber.filter.tags="@smoke"
     //   mvn test -Dcucumber.filter.tags="@login or @lookUp"
     //   mvn test -Dcucumber.filter.tags="not @createAccount"
     //   mvn test -Dtest=TestRunner -Dcucumber.execution.dry-run=true

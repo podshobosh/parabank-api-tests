@@ -14,9 +14,14 @@ import io.restassured.specification.RequestSpecification;
 
 public class ApiClient {
 
-    // final base URL shared through all the calls
     private static final String BASE_URL = ConfigReader.getProperty("base.url");
 
+    /*
+     * Built fresh for every call, not cached in a static field: the logging
+     * filters write into the current thread's ApiLogContext buffer, which Hooks
+     * detaches after each scenario. A reused spec would keep writing to a dead
+     * buffer and failure reports would come out empty.
+     */
     private static RequestSpecification baseRequest() {
         return given()
                 .filter(new RequestLoggingFilter(ApiLogContext.stream()))
@@ -25,7 +30,6 @@ public class ApiClient {
                 .accept("application/json");
     }
 
-    // GET response : takes in given endpoint
     public static Response get(String endpoint) {
         return baseRequest()
                 .when()

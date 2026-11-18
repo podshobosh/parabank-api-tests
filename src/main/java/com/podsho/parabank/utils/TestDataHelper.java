@@ -47,7 +47,7 @@ public class TestDataHelper {
         return houseNumber + " " + STREET_NAMES[RANDOM.nextInt(STREET_NAMES.length)];
     }
 
-    // returns a random username with 9 chars
+    // The random suffix keeps usernames unique across runs.
     public static String randomUsername() {
         return "user_" + UUID.randomUUID().toString().substring(0, 8);
     }
@@ -56,7 +56,6 @@ public class TestDataHelper {
         return "pass_#" + UUID.randomUUID().toString().substring(0, 4);
     }
 
-    // returns a ramdom email 
     public static String randomEmail() {
         return "user_" + UUID.randomUUID().toString().substring(0, 8) + "@test.com";
     }

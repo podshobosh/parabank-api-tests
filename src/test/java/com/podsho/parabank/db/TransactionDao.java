@@ -9,9 +9,20 @@ import java.sql.SQLException;
 
 import com.podsho.parabank.utils.ConfigReader;
 
+/**
+ * Reads ParaBank's own database (HSQLDB) so a scenario can confirm the API
+ * actually persisted what it reported. Connection settings come from the db.*
+ * properties, so the same code can target another database by changing the
+ * driver and URL.
+ */
 public class TransactionDao {
 
+    /**
+     * @return the newest transaction recorded for the account
+     * @throws IllegalStateException if the account has no transactions
+     */
     public Transaction getLatest(String accountId) throws SQLException {
+        // LIMIT 1 works on HSQLDB, PostgreSQL and MySQL; Oracle needs FETCH FIRST 1 ROWS ONLY.
         String sql = "SELECT TYPE, AMOUNT, DESCRIPTION FROM TRANSACTION "
                 + "WHERE ACCOUNT_ID = ? ORDER BY ID DESC LIMIT 1";
 
