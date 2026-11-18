@@ -35,8 +35,10 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 ### Start ParaBank
 
 ```bash
-docker run -d --name parabank -p 8080:8080 parasoft/parabank
+docker run -d --name parabank -p 8080:8080 -p 9001:9001 parasoft/parabank
 ```
+
+Port 9001 exposes ParaBank's embedded HSQLDB so the tests can verify API results directly in the database. Without it the `the deposit is recorded in the database` step cannot connect.
 
 Give it a minute to boot, then **seed the demo database**. ParaBank starts with no schema and no data, so every endpoint returns `400 Could not find customer #12212` until this runs:
 
@@ -50,7 +52,7 @@ Confirm it worked — this should return account XML rather than a 400:
 curl http://localhost:8080/parabank/services/bank/customers/12212/accounts
 ```
 
-The default `base.url` in `config.properties` points at `http://localhost:8080/parabank/services/bank`.
+The default `base.url` in `config.properties` points at `http://localhost:8080/parabank/services/bank`. The database settings (`db.url`, `db.user`, `db.password`) default to the HSQLDB on port 9001 and can be overridden the same way.
 
 ---
 
@@ -111,10 +113,10 @@ The environment-variable form uppercases the key and replaces dots with undersco
 | --- | --- | --- | --- |
 | `login.feature` | 2 | `@login` | Valid login (200); invalid credentials (400 + error message assertion) |
 | `createAccount.feature` | 1 | `@createAccount` | Creating a CHECKING account from an existing funding account |
-| `accountLookUp.feature` | 1 outline, 2 examples | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400) |
-| `depositValidAmount.feature` | 1 scenario, 1 outline (2 examples) | `@deposit`, `@smoke`, `@regression`, `@known-defect` | Valid deposit: confirmation message and balance increases by exactly the amount. Invalid amounts (`0.00`, `-50.00`): expected to be rejected, balance unchanged (see known defects) |
+| `accountLookUp.feature` | 1 outline (2 examples), 1 scenario | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400); the 200 response is validated against a JSON schema |
+| `depositValidAmount.feature` | 2 scenarios, 1 outline (2 examples) | `@deposit`, `@smoke`, `@regression`, `@known-defect` | Valid deposit: confirmation message, balance increases by exactly the amount, and the transaction row exists in the database. Deposit into a non-existent account: 400 with the "could not find account" message. Invalid amounts (`0.00`, `-50.00`): expected to be rejected, balance unchanged (see known defects) |
 
-The default run executes 6 scenarios. The 2 `@known-defect` examples run only on request.
+The default run executes 8 scenarios. The 2 `@known-defect` examples run only on request.
 
 The deposit feature creates its own checking account in a `Background` step, so it never depends on the state of a shared seed account, and it asserts the *change* in balance instead of an absolute value.
 
@@ -157,6 +159,9 @@ src/
 │
 └── test/
     ├── java/com/podsho/parabank/
+    │   ├── db/
+    │   │   ├── TransactionDao.java       # JDBC lookup of an account's latest transaction (ParaBank's HSQLDB)
+    │   │   └── Transaction.java          # Row model: type, amount, description
     │   ├── hooks/Hooks.java              # @Before / @After — log context lifecycle, failure attachment
     │   ├── runners/
     │   │   ├── TestRunner.java           # Cucumber + TestNG entry point
@@ -164,6 +169,7 @@ src/
     │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit, CommonSteps (shared steps)
     └── resources/
         ├── features/                     # Gherkin specifications
+        ├── schemas/account.json          # JSON schema for the account response (contract test)
         ├── cucumber.properties           # Default tag filter
         ├── extent.properties             # ExtentReports configuration and system info
         ├── extent-config.xml             # Extent theme and titles
@@ -207,7 +213,7 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 `.github/workflows/ci.yml` runs on every push and pull request to `main`, and on manual dispatch:
 
-1. Starts ParaBank in Docker and waits for it to accept connections.
+1. Starts ParaBank in Docker (publishing ports 8080 and 9001) and waits for it to accept connections.
 2. Seeds the demo database, retrying until the data endpoint returns 200.
 3. Runs `mvn -B test`.
 4. Uploads the reports (`test-output/`, Cucumber HTML/JSON/XML, `logs/`) as a build artifact, even when tests fail.
@@ -223,6 +229,10 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 **Service layer over the client.** `AccountService` owns the ParaBank operations (log in, find the funding account, create an account, deposit, read a balance), so endpoints and parameter names live in one place and steps read as intent. It is injected into step classes through PicoContainer. Methods that return a value (`login`, `getBalance`) fail fast through one shared `requireOk` check that names the operation, status and body; methods that return the raw `Response` (`deposit`) leave assertions to the steps.
 
 **Typed domain values.** Account types are an `AccountType` enum, so a typo in a feature file fails loudly instead of silently becoming a checking account. Money is `BigDecimal` end to end and is compared with `compareTo`, never with a `double` and a tolerance.
+
+**The database is checked directly, not assumed.** After a deposit, a step reads the newest row for that account through JDBC and compares type, amount and description with what the API reported. The query uses a `PreparedStatement`, and the connection comes from the `db.*` properties, so the same code can target another database by changing the driver and URL. The account under test is created per scenario, so its newest row is always the deposit and the shared funding account's transfers don't interfere.
+
+**Contract tests alongside value assertions.** The account response is validated against `schemas/account.json` (field names, types, required keys, no extra fields), so an API change that keeps the values but breaks the shape is caught.
 
 **Shared steps live in one place.** Steps reused across features (for example `status code should be {int}`) are in `CommonSteps`, so no feature depends on another feature's step class.
 
@@ -241,9 +251,12 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 - [x] Service layer (`AccountService`) injected via PicoContainer
 - [x] Shared steps moved into `CommonSteps`
 - [x] `AccountType` enum and `BigDecimal` for money
-- [ ] Shared `RequestSpecification` in `ApiClient`
+- [x] Base URI set in `ApiClient.baseRequest()`, which builds a fresh request per call so per-scenario logging stays intact
+- [x] JSON schema validation for response contract testing
+- [x] Database verification of API effects (JDBC against ParaBank's HSQLDB)
+- [ ] Data-driven scenarios loaded from JSON/CSV test data
+- [ ] `Jenkinsfile` alongside the GitHub Actions workflow
+- [ ] Jira-style tags and a traceability table (requirement to scenario)
 - [ ] Maven wrapper (`mvnw`) so the repo is clone-and-run without a local Maven install
-- [ ] JSON schema validation for response contract testing
-- [ ] Database verification of API effects (JDBC against ParaBank's HSQLDB)
 - [ ] Parallel execution via surefire thread configuration
 - [ ] Expanded coverage: fund transfers, bill pay, transaction search
