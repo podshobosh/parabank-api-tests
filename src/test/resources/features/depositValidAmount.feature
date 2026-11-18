@@ -29,8 +29,9 @@ Feature: Deposit funds into an account
       | amount |
       |   0.00 |
       | -50.00 |
-  
+
   Scenario: Customer cannot deposit into a non-existing account
-    When the customer deposits 200.00 into account "99990"
+    Given non-existent account
+    When the customer deposits 200.00 into their account
     Then the deposit is rejected
-    And the response message should be "Could not find account number 99990"
+    And the response says the account was not found

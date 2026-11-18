@@ -7,14 +7,11 @@ import org.testng.Assert;
 import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.db.Transaction;
 import com.podsho.parabank.db.TransactionDao;
-import com.podsho.parabank.models.AccountType;
-import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.restassured.response.Response;
 
 public class DepositStepDefs {
 
@@ -28,17 +25,6 @@ public class DepositStepDefs {
         this.transactionDao = transactionDao;
     }
 
-    @Given("a customer with a checking account")
-    public void a_customer_with_a_checking_account() {
-        String username = ConfigReader.getProperty("test.user");
-        String password = ConfigReader.getProperty("test.pass");
-
-        String customerId = service.login(username, password);
-
-        Response createResponse = service.createAccount(customerId, AccountType.CHECKING,
-                service.getFirstAccountId(customerId));
-        context.setAccountId(createResponse.jsonPath().getString("id"));
-    }
 
     @Given("the account balance is recorded")
     public void the_account_balance_is_recorded() {

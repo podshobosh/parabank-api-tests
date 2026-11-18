@@ -1,16 +1,16 @@
 Feature: Account lookup by account ID
-@lookUp
-    Scenario Outline: Account lookup returns expected status code
-        Given an account id is "<accountId>"
-        When the account is requested
-        Then status code should be <status>
 
-        Examples:
-            | accountId | status |
-            | 12345     | 200    |
-            | 99999     | 400    |
-    @lookUp        
-    Scenario: Existing account matches the account schema
-        Given an account id is "12345"
-        When the account is requested
-        Then the response matches the account schema
+  @lookUp
+  Scenario: Account lookup returns expected status code
+    Given a customer with a checking account
+    When the account is requested
+    Then status code should be 200
+    And the response matches the account schema
+
+@lookUp
+  Scenario: Non-existent account is rejected
+    Given non-existent account
+    When the account is requested
+    Then status code should be 400
+
+ 
