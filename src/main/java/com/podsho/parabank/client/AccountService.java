@@ -25,7 +25,7 @@ public class AccountService {
      * @throws IllegalStateException if the lookup does not return 200
      */
     public BigDecimal getBalance(String accountId) {
-        Response getResponse = ApiClient.get("/accounts/" + accountId);
+        Response getResponse =getAccount(accountId);
         requireOk(getResponse, "Get balance");
 
         // Built from text so the exact decimal value survives; a double would not.
@@ -44,13 +44,21 @@ public class AccountService {
         return ApiClient.postWithParams("/deposit", params);
     }
 
+    public Response getAccount(String accountId){
+        return ApiClient.get("/accounts/" + accountId);
+    }
+
+    public Response loginRaw(String username, String password){
+        return ApiClient.get("/login/" + username +"/" + password);
+    }
+
     /**
      * @return the customer id of the logged-in user
      * @throws IllegalStateException if the credentials are rejected
      */
-    public String login(String username, String password) {
+    public String loginAndGetCustomerId(String username, String password) {
 
-        Response loginResponse = ApiClient.get("/login/" + username + "/" + password);
+        Response loginResponse = loginRaw(username, password);
         requireOk(loginResponse, "Login");
         return loginResponse.jsonPath().getString("id");
     }

@@ -3,7 +3,8 @@ package com.podsho.parabank.stepdefinitions;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 
-import com.podsho.parabank.client.ApiClient;
+
+import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.utils.ConfigReader;
 import com.podsho.parabank.utils.ScenarioContext;
 import com.podsho.parabank.utils.TestDataHelper;
@@ -13,10 +14,12 @@ import com.podsho.parabank.utils.TestDataHelper;
 public class LoginSteps {
 
     private final ScenarioContext context;
+    private final AccountService service;
     private String username, password;
 
-    public LoginSteps(ScenarioContext context) {
+    public LoginSteps(ScenarioContext context, AccountService service) {
         this.context = context;
+        this.service = service;
     }
 
     @Given("a user has an existing account with valid credentials")
@@ -33,6 +36,6 @@ public class LoginSteps {
 
     @When("user calls a login request using their username and password")
     public void user_calls_a_login_request_using_their_username_and_password() {
-        context.setResponse(ApiClient.get("/login/" + username + "/" + password));
+        context.setResponse(service.loginRaw(username, password));
     }
 }

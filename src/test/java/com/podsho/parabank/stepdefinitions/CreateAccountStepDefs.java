@@ -30,7 +30,7 @@ public class CreateAccountStepDefs {
         String username = ConfigReader.getProperty("test.user");
         String password = ConfigReader.getProperty("test.pass");
 
-        customerId = service.login(username, password);
+        customerId = service.loginAndGetCustomerId(username, password);
         fromAccountId = service.getFirstAccountId(customerId);
     }
 

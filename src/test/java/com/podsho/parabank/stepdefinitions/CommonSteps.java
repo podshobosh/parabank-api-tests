@@ -25,7 +25,7 @@ public class CommonSteps {
     public void a_customer_with_a_checking_account() {
         String username = ConfigReader.getProperty("test.user");
         String password = ConfigReader.getProperty("test.pass");
-        String customerId = service.login(username, password);
+        String customerId = service.loginAndGetCustomerId(username, password);
 
         Response createResponse = service.createAccount(customerId, AccountType.CHECKING,
                 service.getFirstAccountId(customerId));
