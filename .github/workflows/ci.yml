@@ -23,7 +23,7 @@ jobs:
           cache: maven
 
       - name: Start ParaBank
-        run: docker run -d --name parabank -p 8080:8080 parasoft/parabank
+        run: docker run -d --name parabank -p 8080:8080 -p 9001:9001 parasoft/parabank
 
       # Tomcat accepts connections well before the app is usable, and "/parabank/"
       # answers with a 302, so treat any response other than curl's 000
