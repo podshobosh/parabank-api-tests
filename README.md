@@ -1,5 +1,6 @@
-![CI](https://github.com/podshobosh/parabank-api-tests/actions/workflows/ci.yml/badge.svg)
 # ParaBank API Test Automation
+
+![CI](https://github.com/podshobosh/parabank-api-tests/actions/workflows/ci.yml/badge.svg)
 
 BDD-style REST API test automation framework built against [ParaBank](https://github.com/parasoft/parabank), Parasoft's open-source demo banking application.
 
@@ -10,7 +11,7 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 ## Stack
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | Language | Java 17 |
 | Build | Maven |
 | API client | REST Assured 6.0.1 |
@@ -78,7 +79,7 @@ mvn test -Dcucumber.filter.tags="@deposit and not @known-defect"
 ```
 
 | Tag | Meaning |
-|---|---|
+| --- | --- |
 | `@login`, `@lookUp`, `@createAccount`, `@deposit` | Feature domain |
 | `@smoke` | Fast happy-path checks |
 | `@regression` | Full behaviour coverage for the feature |
@@ -107,7 +108,7 @@ The environment-variable form uppercases the key and replaces dots with undersco
 ## Test coverage
 
 | Feature | Scenarios | Tags | Covers |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `login.feature` | 2 | `@login` | Valid login (200); invalid credentials (400 + error message assertion) |
 | `createAccount.feature` | 1 | `@createAccount` | Creating a CHECKING account from an existing funding account |
 | `accountLookUp.feature` | 1 outline, 2 examples | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400) |
@@ -124,7 +125,7 @@ The deposit feature creates its own checking account in a `Background` step, so 
 These are findings about the system under test, not framework bugs.
 
 | Finding | Evidence | Test |
-|---|---|---|
+| --- | --- | --- |
 | `/deposit` accepts zero and negative amounts | HTTP 200 for `amount=0.0` and `amount=-50.0`; the `-50.0` call lowered the account balance by 50 (a deposit acting as a withdrawal) | `Customer cannot deposit an invalid amount`, tagged `@known-defect` |
 | Login credentials travel in the URL | `GET /login/{username}/{password}` | Observed in `LoginSteps`; no dedicated test yet |
 
@@ -138,11 +139,15 @@ mvn test -Dtest=TestRunner -Dcucumber.filter.tags="@known-defect"
 
 ## Project structure
 
-```
+```text
 src/
 ├── main/java/com/podsho/parabank/
-│   ├── client/ApiClient.java        # REST Assured wrapper — GET/POST/PUT/DELETE + query params
-│   ├── models/Account.java          # Lombok POJO for deserialization
+│   ├── client/
+│   │   ├── ApiClient.java           # REST Assured wrapper — GET/POST/PUT/DELETE + query params
+│   │   └── AccountService.java      # ParaBank operations (login, accounts, deposit) with a shared status check
+│   ├── models/
+│   │   ├── Account.java             # Lombok POJO for deserialization
+│   │   └── AccountType.java         # CHECKING / SAVINGS enum carrying ParaBank's numeric code
 │   └── utils/
 │       ├── ApiLogContext.java       # Per-thread request/response capture
 │       ├── ConfigReader.java        # Layered config resolution
@@ -156,7 +161,7 @@ src/
     │   ├── runners/
     │   │   ├── TestRunner.java           # Cucumber + TestNG entry point
     │   │   └── FailedTestRunner.java     # Re-runs scenarios that failed last time
-    │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit
+    │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit, CommonSteps (shared steps)
     └── resources/
         ├── features/                     # Gherkin specifications
         ├── cucumber.properties           # Default tag filter
@@ -174,7 +179,7 @@ src/
 After a run:
 
 | Output | Location |
-|---|---|
+| --- | --- |
 | ExtentReports HTML (primary) | `test-output/ExtentReport/extent-report.html` |
 | Cucumber HTML (fallback) | `target/cucumber-reports.html` |
 | Cucumber JSON / JUnit XML (for CI tooling) | `target/cucumber.json`, `target/cucumber.xml` |
@@ -215,6 +220,12 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 **Thin client layer.** `ApiClient` centralizes base URL resolution, content negotiation, and logging filters, so step definitions stay declarative and no `given()` chains leak into them.
 
+**Service layer over the client.** `AccountService` owns the ParaBank operations (log in, find the funding account, create an account, deposit, read a balance), so endpoints and parameter names live in one place and steps read as intent. It is injected into step classes through PicoContainer. Methods that return a value (`login`, `getBalance`) fail fast through one shared `requireOk` check that names the operation, status and body; methods that return the raw `Response` (`deposit`) leave assertions to the steps.
+
+**Typed domain values.** Account types are an `AccountType` enum, so a typo in a feature file fails loudly instead of silently becoming a checking account. Money is `BigDecimal` end to end and is compared with `compareTo`, never with a `double` and a tolerance.
+
+**Shared steps live in one place.** Steps reused across features (for example `status code should be {int}`) are in `CommonSteps`, so no feature depends on another feature's step class.
+
 **Config precedence over config files.** Environment switching happens through system properties or environment variables, so the same artifact runs against local, CI, or a hosted instance unchanged.
 
 **Tests own their data and assert deltas.** Scenarios create the account they need and assert how a value changes (balance after = balance before + amount) rather than comparing to a hardcoded number. An earlier version asserted a fixed balance and broke CI the moment another test changed it.
@@ -227,8 +238,10 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 - [x] CI pipeline (GitHub Actions) publishing the Extent report as a build artifact
 - [x] Machine-readable results (Cucumber JSON and JUnit XML)
-- [ ] Service layer (`AccountService` etc.) on a shared `RequestSpecification`, injected via PicoContainer
-- [ ] Shared steps (`status code should be`) moved out of `LoginSteps` into a common class
+- [x] Service layer (`AccountService`) injected via PicoContainer
+- [x] Shared steps moved into `CommonSteps`
+- [x] `AccountType` enum and `BigDecimal` for money
+- [ ] Shared `RequestSpecification` in `ApiClient`
 - [ ] Maven wrapper (`mvnw`) so the repo is clone-and-run without a local Maven install
 - [ ] JSON schema validation for response contract testing
 - [ ] Database verification of API effects (JDBC against ParaBank's HSQLDB)
