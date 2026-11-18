@@ -18,7 +18,7 @@ Feature: Deposit funds into an account
   # so this scenario fails until the API validates input. Excluded from the default
   # run via cucumber.properties; run it with -Dcucumber.filter.tags="@known-defect".
 
-  @known-defect
+  @negative @known-defect
   Scenario Outline: Customer cannot deposit an invalid amount
     Given the account balance is recorded
     When the customer deposits <amount> into their account
@@ -29,7 +29,8 @@ Feature: Deposit funds into an account
       | amount |
       |   0.00 |
       | -50.00 |
-
+      
+  @negate
   Scenario: Customer cannot deposit into a non-existing account
     Given non-existent account
     When the customer deposits 200.00 into their account

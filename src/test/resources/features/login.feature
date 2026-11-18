@@ -6,7 +6,7 @@ Feature: Testing login functionality
         When user calls a login request using their username and password
         Then status code should be 200
 
-    #Negative Test
+    @negativeLogin
     Scenario: Login fails with invalid credentials
         Given a user has invalid credentials
         When user calls a login request using their username and password

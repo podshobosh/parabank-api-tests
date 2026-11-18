@@ -7,7 +7,7 @@ Feature: Account lookup by account ID
     Then status code should be 200
     And the response matches the account schema
 
-@lookUp
+@negativelookUp
   Scenario: Non-existent account is rejected
     Given non-existent account
     When the account is requested
