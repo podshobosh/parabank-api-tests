@@ -5,6 +5,7 @@ import org.testng.Assert;
 import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.models.AccountType;
 import com.podsho.parabank.utils.ConfigReader;
+import com.podsho.parabank.utils.Log;
 import com.podsho.parabank.utils.ScenarioContext;
 
 import io.cucumber.java.en.Given;
@@ -46,6 +47,16 @@ public class CommonSteps {
     public void the_response_says_the_account_was_not_found() {
         Assert.assertEquals(context.getResponse().asString().trim(),
                 "Could not find account number " + context.getAccountId());
+    }
+
+    @Then("the response time is under {int} milliseconds")
+    public void the_response_time_is_under_milliseconds(Integer milliseconds) {
+        Assert.assertTrue(context.getResponse().getTime() < milliseconds);
+    }
+
+    @Then("response is JSON")
+    public void response_is_json() {
+        Assert.assertTrue(context.getResponse().getContentType().startsWith("application/json"),"");
     }
 
 }
