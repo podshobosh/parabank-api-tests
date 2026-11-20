@@ -13,7 +13,10 @@ Feature: Deposit funds into an account
     When the customer deposits 200.00 into their account
     Then the deposit is confirmed
     And the account balance has increased by 200.00
-    Then the deposit is recorder in the database
+    Then the deposit is recorded in the database
+    And the database balance has increased by 200.00
+  
+  
   # ParaBank returns 200 and applies these amounts (a -50 deposit lowers the balance),
   # so this scenario fails until the API validates input. Excluded from the default
   # run via cucumber.properties; run it with -Dcucumber.filter.tags="@known-defect".
@@ -30,7 +33,7 @@ Feature: Deposit funds into an account
       |   0.00 |
       | -50.00 |
       
-  @negate
+  @negative
   Scenario: Customer cannot deposit into a non-existing account
     Given non-existent account
     When the customer deposits 200.00 into their account

@@ -1,12 +1,9 @@
 package com.podsho.parabank.db;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.podsho.parabank.utils.ConfigReader;
 
 /**
  * Reads ParaBank's own database (HSQLDB) so a scenario can confirm the API
@@ -25,12 +22,8 @@ public class TransactionDao {
         String sql = "SELECT TYPE, AMOUNT, DESCRIPTION FROM TRANSACTION "
                 + "WHERE ACCOUNT_ID = ? ORDER BY ID DESC LIMIT 1";
 
-        try (Connection conn = DriverManager.getConnection(
-                    ConfigReader.getProperty("db.url"),
-                    ConfigReader.getProperty("db.user"),
-                    ConfigReader.getProperty("db.password", ""));
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try (Connection c = DbUtils.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, Integer.parseInt(accountId));
 
             try (ResultSet rs = ps.executeQuery()) {

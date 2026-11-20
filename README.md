@@ -38,7 +38,7 @@ Written as a working example of a production-shaped API automation stack: Cucumb
 docker run -d --name parabank -p 8080:8080 -p 9001:9001 parasoft/parabank
 ```
 
-Port 9001 exposes ParaBank's embedded HSQLDB so the tests can verify API results directly in the database. Without it the `the deposit is recorded in the database` step cannot connect.
+Port 9001 exposes ParaBank's embedded HSQLDB so the tests can verify API results directly in the database. Without it the `the deposit is recorded in the database` and `the database balance has increased by` steps cannot connect.
 
 Give it a minute to boot, then **seed the demo database**. ParaBank starts with no schema and no data, so every endpoint returns `400 Could not find customer #12212` until this runs:
 
@@ -161,6 +161,8 @@ src/
     ├── java/com/podsho/parabank/
     │   ├── db/
     │   │   ├── TransactionDao.java       # JDBC lookup of an account's latest transaction (ParaBank's HSQLDB)
+    │   │   ├── AccountDao.java           # JDBC lookup of an account's stored balance
+    │   │   ├── DbUtils.java              # Opens connections from the db.* properties
     │   │   └── Transaction.java          # Row model: type, amount, description
     │   ├── hooks/Hooks.java              # @Before / @After — log context lifecycle, failure attachment
     │   ├── runners/
@@ -230,7 +232,7 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 **Typed domain values.** Account types are an `AccountType` enum, so a typo in a feature file fails loudly instead of silently becoming a checking account. Money is `BigDecimal` end to end and is compared with `compareTo`, never with a `double` and a tolerance.
 
-**The database is checked directly, not assumed.** After a deposit, a step reads the newest row for that account through JDBC and compares type, amount and description with what the API reported. The query uses a `PreparedStatement`, and the connection comes from the `db.*` properties, so the same code can target another database by changing the driver and URL. The account under test is created per scenario, so its newest row is always the deposit and the shared funding account's transfers don't interfere.
+**The database is checked directly, not assumed.** After a deposit, a step reads the newest row for that account through JDBC and compares type, amount and description with what the API reported. A second step reads the ACCOUNT table through `AccountDao` and checks the stored balance rose by the deposited amount, so an API that reports success without saving is caught. The query uses a `PreparedStatement`, and the connection comes from the `db.*` properties, so the same code can target another database by changing the driver and URL. The account under test is created per scenario, so its newest row is always the deposit and the shared funding account's transfers don't interfere.
 
 **Contract tests alongside value assertions.** The account response is validated against `schemas/account.json` (field names, types, required keys, no extra fields), so an API change that keeps the values but breaks the shape is caught.
 

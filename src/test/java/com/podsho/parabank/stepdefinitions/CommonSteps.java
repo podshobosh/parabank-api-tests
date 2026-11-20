@@ -5,7 +5,6 @@ import org.testng.Assert;
 import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.models.AccountType;
 import com.podsho.parabank.utils.ConfigReader;
-import com.podsho.parabank.utils.Log;
 import com.podsho.parabank.utils.ScenarioContext;
 
 import io.cucumber.java.en.Given;

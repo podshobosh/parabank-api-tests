@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import org.testng.Assert;
 import com.podsho.parabank.client.AccountService;
+import com.podsho.parabank.db.AccountDao;
 import com.podsho.parabank.db.Transaction;
 import com.podsho.parabank.db.TransactionDao;
 import com.podsho.parabank.utils.ScenarioContext;
@@ -18,13 +19,15 @@ public class DepositStepDefs {
     private final ScenarioContext context;
     private final AccountService service;
     private final TransactionDao transactionDao;
+    private final AccountDao accountDao;
 
-    public DepositStepDefs(ScenarioContext context, AccountService service, TransactionDao transactionDao) {
+    public DepositStepDefs(ScenarioContext context, AccountService service, TransactionDao transactionDao,
+            AccountDao accountDao) {
         this.context = context;
         this.service = service;
         this.transactionDao = transactionDao;
+        this.accountDao = accountDao;
     }
-
 
     @Given("the account balance is recorded")
     public void the_account_balance_is_recorded() {
@@ -48,7 +51,6 @@ public class DepositStepDefs {
 
     @Then("the account balance has increased by {bigdecimal}")
     public void the_account_balance_has_increased_by(BigDecimal amount) {
-        // compareTo, not equals: BigDecimal equals also compares scale, so 200.0 != 200.00.
         Assert.assertEquals(service.getBalance(context.getAccountId()).compareTo(context.getBalance().add(amount)), 0);
     }
 
@@ -70,13 +72,18 @@ public class DepositStepDefs {
         context.setResponse(service.deposit(accountId, amount));
     }
 
-    @Then("the deposit is recorder in the database")
-    public void the_deposit_is_recorder_in_the_database() throws SQLException {
-        // The account was created for this scenario, so its newest row is the deposit.
+    @Then("the deposit is recorded in the database")
+    public void the_deposit_is_recorded_in_the_database() throws SQLException {
         Transaction latest = transactionDao.getLatest(context.getAccountId());
 
-        Assert.assertEquals(latest.getType(), 0); // 0 = credit; payments and transfers are 1
+        Assert.assertEquals(latest.getType(), 0);
         Assert.assertEquals(latest.getAmount().compareTo(context.getAmount()), 0);
         Assert.assertEquals(latest.getDescription(), "Deposit via Web Service");
+    }
+
+    @Then("the database balance has increased by {bigdecimal}")
+    public void the_database_balance_has_increased_by(BigDecimal amount) throws SQLException {
+        BigDecimal updateBalance = accountDao.getBalance(context.getAccountId());
+        Assert.assertEquals(updateBalance.subtract(context.getBalance()).compareTo(amount), 0);
     }
 }
