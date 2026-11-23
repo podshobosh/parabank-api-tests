@@ -118,6 +118,21 @@ The environment-variable form uppercases the key and replaces dots with undersco
 
 The default run executes 8 scenarios. The 2 `@known-defect` examples run only on request.
 
+### Traceability
+
+Every scenario carries one unique `@PB-nnn` tag, written in the style of a Jira key (`PB` is a placeholder project key; in a real project the tag holds the ticket id, and test-management tools such as Xray read it from there). Run a single requirement with `mvn test -Dcucumber.filter.tags="@PB-401"`.
+
+| ID | Scenario | Endpoint | Other tags | Status |
+| --- | --- | --- | --- | --- |
+| `PB-101` | User logs in with valid credentials | `GET /login/{user}/{pass}` | `@login` | Active |
+| `PB-102` | Login fails with invalid credentials | `GET /login/{user}/{pass}` | `@login`, `@negativeLogin` | Active |
+| `PB-201` | Account lookup returns 200, JSON, matches schema | `GET /accounts/{id}` | `@lookUp` | Active |
+| `PB-202` | Non-existent account is rejected | `GET /accounts/{id}` | `@negativelookUp` | Active |
+| `PB-301` | User creates a new checking account | `POST /createAccount` | `@createAccount` | Active |
+| `PB-401` | Customer deposits a valid amount (API and database checked) | `POST /deposit` | `@deposit`, `@smoke`, `@regression` | Active |
+| `PB-402` | Customer cannot deposit an invalid amount (`0.00`, `-50.00`) | `POST /deposit` | `@deposit`, `@negative`, `@known-defect` | Known defect: ParaBank accepts these |
+| `PB-403` | Customer cannot deposit into a non-existent account | `POST /deposit` | `@deposit`, `@negative` | Active |
+
 The deposit feature creates its own checking account in a `Background` step, so it never depends on the state of a shared seed account, and it asserts the *change* in balance instead of an absolute value.
 
 ---

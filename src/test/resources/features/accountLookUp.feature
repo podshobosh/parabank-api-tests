@@ -1,6 +1,6 @@
 Feature: Account lookup by account ID
 
-  @lookUp
+  @lookUp @PB-201
   Scenario: Account lookup returns expected status code
     Given a customer with a checking account
     When the account is requested
@@ -9,7 +9,7 @@ Feature: Account lookup by account ID
     And response is JSON
     And the response matches the account schema
 
-  @negativelookUp
+  @negativelookUp @PB-202
   Scenario: Non-existent account is rejected
     Given non-existent account
     When the account is requested
