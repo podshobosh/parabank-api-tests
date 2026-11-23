@@ -127,12 +127,12 @@ The environment-variable form uppercases the key and replaces dots with undersco
 
 | Feature | Scenarios | Tags | Covers |
 | --- | --- | --- | --- |
-| `login.feature` | 2 | `@login` | Valid login (200); invalid credentials (400 + error message assertion) |
+| `login.feature` | 1 scenario, 1 outline (2 examples) | `@login` | Valid login (200); invalid credentials (400 + error message assertion), with the bad credential pairs loaded from `testdata/invalidLogins.json` |
 | `createAccount.feature` | 1 | `@createAccount` | Creating a CHECKING account from an existing funding account |
 | `accountLookUp.feature` | 1 outline (2 examples), 1 scenario | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400); the 200 response is validated against a JSON schema |
 | `depositValidAmount.feature` | 2 scenarios, 1 outline (2 examples) | `@deposit`, `@smoke`, `@regression`, `@known-defect` | Valid deposit: confirmation message, balance increases by exactly the amount, and the transaction row exists in the database. Deposit into a non-existent account: 400 with the "could not find account" message. Invalid amounts (`0.00`, `-50.00`): expected to be rejected, balance unchanged (see known defects) |
 
-The default run executes 7 scenarios plus a database connection smoke test (`DbConnectionTest`). The 2 `@known-defect` examples run only on request.
+The default run executes 8 scenarios plus a database connection smoke test (`DbConnectionTest`). The 2 `@known-defect` examples run only on request.
 
 ### Traceability
 
@@ -141,7 +141,7 @@ Every scenario carries one unique `@PB-nnn` tag, written in the style of a Jira 
 | ID | Scenario | Endpoint | Other tags | Status |
 | --- | --- | --- | --- | --- |
 | `PB-101` | User logs in with valid credentials | `GET /login/{user}/{pass}` | `@login` | Active |
-| `PB-102` | Login fails with invalid credentials | `GET /login/{user}/{pass}` | `@login`, `@negativeLogin` | Active |
+| `PB-102` | Login fails with invalid credentials (outline: wrong password, unknown user) | `GET /login/{user}/{pass}` | `@login`, `@negativeLogin` | Active |
 | `PB-201` | Account lookup returns 200, JSON, matches schema | `GET /accounts/{id}` | `@lookUp` | Active |
 | `PB-202` | Non-existent account is rejected | `GET /accounts/{id}` | `@negativelookUp` | Active |
 | `PB-301` | User creates a new checking account | `POST /createAccount` | `@createAccount` | Active |
@@ -177,6 +177,7 @@ src/
 ├── main/java/com/podsho/parabank/
 │   ├── client/
 │   │   ├── ApiClient.java           # REST Assured wrapper — GET/POST/PUT/DELETE + query params
+│   │   ├── Endpoints.java           # ParaBank endpoint paths in one place
 │   │   └── AccountService.java      # ParaBank operations (login, accounts, deposit) with a shared status check
 │   ├── models/
 │   │   ├── Account.java             # Lombok POJO for deserialization
@@ -195,6 +196,9 @@ src/
     │   │   ├── AccountDao.java           # JDBC lookup of an account's stored balance
     │   │   ├── DbUtils.java              # Opens connections from the db.* properties
     │   │   └── Transaction.java          # Row model: type, amount, description
+    │   ├── testdata/
+    │   │   ├── TestData.java             # Loads named cases from JSON test data files
+    │   │   └── LoginCase.java            # Model for one bad-login case
     │   ├── hooks/Hooks.java              # @Before / @After — log context lifecycle, failure attachment
     │   ├── runners/
     │   │   ├── TestRunner.java           # Cucumber + TestNG entry point
@@ -202,6 +206,7 @@ src/
     │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit, CommonSteps (shared steps)
     └── resources/
         ├── features/                     # Gherkin specifications
+        ├── testdata/invalidLogins.json   # Bad credential pairs used by the negative login outline
         ├── schemas/account.json          # JSON schema for the account response (contract test)
         ├── cucumber.properties           # Default tag filter
         ├── extent.properties             # ExtentReports configuration and system info
@@ -275,6 +280,8 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 **Known product defects are quarantined, not hidden.** A scenario that documents correct behaviour the system violates is tagged `@known-defect` and excluded from the default run, instead of being deleted or rewritten to pass.
 
+**Test data lives in files, not in steps.** The bad-login matrix is a JSON file (`src/test/resources/testdata/invalidLogins.json`) read by `TestData` with Jackson. The feature names a case (`"wrong password"`) in its `Examples` table and the step looks it up, so adding a case means adding one JSON entry and one table row, and a misspelled case name fails with a clear error. Valid credentials stay in `config.properties` and can be overridden by environment variables, because they are the part that would be secret in a real project.
+
 ---
 
 ## Roadmap
@@ -287,7 +294,7 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 - [x] Base URI set in `ApiClient.baseRequest()`, which builds a fresh request per call so per-scenario logging stays intact
 - [x] JSON schema validation for response contract testing
 - [x] Database verification of API effects (JDBC against ParaBank's HSQLDB)
-- [ ] Data-driven scenarios loaded from JSON/CSV test data
+- [x] Data-driven scenarios loaded from JSON test data (invalid login cases)
 - [ ] `Jenkinsfile` alongside the GitHub Actions workflow
 - [x] Jira-style tags and a traceability table (requirement to scenario)
 - [ ] Maven wrapper (`mvnw`) so the repo is clone-and-run without a local Maven install
