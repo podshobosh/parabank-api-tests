@@ -47,15 +47,15 @@ public class AccountService {
         Map<String, Object> params = new HashMap<>();
         params.put("accountId", accountId);
         params.put("amount", amount);
-        return client.postWithParams("/deposit", params);
+        return client.postWithParams(Endpoints.DEPOSIT, params);
     }
 
     public Response getAccount(String accountId) {
-        return client.get("/accounts/" + accountId);
+        return client.get(Endpoints.account(accountId));
     }
 
     public Response loginRaw(String username, String password) {
-        return client.get("/login/" + username + "/" + password);
+        return client.get(Endpoints.login(username, password));
     }
 
     /**
@@ -76,7 +76,7 @@ public class AccountService {
      */
     public String getFirstAccountId(String customerId) {
 
-        Response accountsResponse = client.get("/customers/" + customerId + "/accounts");
+        Response accountsResponse = client.get(Endpoints.customerAccounts(customerId));
         requireOk(accountsResponse, "Listing accounts");
 
         return accountsResponse.jsonPath().getString("[0].id");
@@ -95,7 +95,7 @@ public class AccountService {
         params.put("newAccountType", accountType.getCode());
         params.put("fromAccountId", fromAccountId);
 
-        Response createResponse = client.postWithParams("/createAccount", params);
+        Response createResponse = client.postWithParams(Endpoints.CREATE_ACCOUNT, params);
 
         requireOk(createResponse, "Create account");
         return createResponse;
