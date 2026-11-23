@@ -17,8 +17,10 @@ public class DbUtils {
      * ideally in a try-with-resources header.
      */
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(ConfigReader.getProperty("db.url"),
-                ConfigReader.getProperty("db.user"),
-                ConfigReader.getProperty("db.password", ""));
+        String profile = ConfigReader.getProperty("db.profile", "hsqldb");
+        return DriverManager.getConnection(
+                ConfigReader.getProperty("db." + profile +".url"),
+                ConfigReader.getProperty("db." + profile + ".user"),
+                ConfigReader.getProperty("db." + profile + ".password", ""));
     }
 }
