@@ -95,6 +95,22 @@ The runner writes failed scenarios to `target/failed_scenarios.txt`. Re-run just
 mvn test -Dtest=FailedTestRunner
 ```
 
+### Parallel execution
+
+Scenarios run in parallel on 4 threads by default. The thread count comes from `parallel.threads` in `pom.xml` and can be overridden per run:
+
+```bash
+mvn clean test                          # 4 threads
+mvn clean test -Dparallel.threads=1     # sequential, handy when debugging
+mvn clean test -Dparallel.threads=8
+```
+
+`TestRunner` makes Cucumber's scenario data provider parallel, and surefire passes the thread count to TestNG as `dataproviderthreadcount`. Threads form a pool: as soon as one finishes a scenario it takes the next waiting one.
+
+Scenarios stay independent because each gets its own `ScenarioContext` from PicoContainer and its own `ThreadLocal` API log buffer.
+
+**ParaBank is not safe under concurrent `createAccount` calls.** Firing six at once against a clean instance returned `400 Could not create new account` for some of them, while sequential calls always succeeded. `AccountService.createAccount` therefore holds a lock around that single call, so account creation is serialized while everything else (deposits, lookups, database checks) still runs in parallel. If a new intermittent failure ever shows up, check which other ParaBank endpoints are being called concurrently.
+
 ### Pointing at a different environment
 
 `ConfigReader` resolves each property in precedence order — **system property → environment variable → `config.properties`** — so no file edit is needed to change environments:
@@ -116,7 +132,7 @@ The environment-variable form uppercases the key and replaces dots with undersco
 | `accountLookUp.feature` | 1 outline (2 examples), 1 scenario | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400); the 200 response is validated against a JSON schema |
 | `depositValidAmount.feature` | 2 scenarios, 1 outline (2 examples) | `@deposit`, `@smoke`, `@regression`, `@known-defect` | Valid deposit: confirmation message, balance increases by exactly the amount, and the transaction row exists in the database. Deposit into a non-existent account: 400 with the "could not find account" message. Invalid amounts (`0.00`, `-50.00`): expected to be rejected, balance unchanged (see known defects) |
 
-The default run executes 8 scenarios. The 2 `@known-defect` examples run only on request.
+The default run executes 7 scenarios plus a database connection smoke test (`DbConnectionTest`). The 2 `@known-defect` examples run only on request.
 
 ### Traceability
 
@@ -239,7 +255,7 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 
 ## Design notes
 
-**Shared state via DI, not statics.** `ScenarioContext` is injected through PicoContainer, so step definition classes exchange data without static fields — keeping scenarios isolated and safe to parallelize later.
+**Shared state via DI, not statics.** `ScenarioContext` is injected through PicoContainer, so step definition classes exchange data without static fields — keeping scenarios isolated and safe to run in parallel.
 
 **Thin client layer.** `ApiClient` centralizes base URL resolution, content negotiation, and logging filters, so step definitions stay declarative and no `given()` chains leak into them.
 
@@ -273,7 +289,7 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 - [x] Database verification of API effects (JDBC against ParaBank's HSQLDB)
 - [ ] Data-driven scenarios loaded from JSON/CSV test data
 - [ ] `Jenkinsfile` alongside the GitHub Actions workflow
-- [ ] Jira-style tags and a traceability table (requirement to scenario)
+- [x] Jira-style tags and a traceability table (requirement to scenario)
 - [ ] Maven wrapper (`mvnw`) so the repo is clone-and-run without a local Maven install
-- [ ] Parallel execution via surefire thread configuration
+- [x] Parallel execution via surefire thread configuration (account creation serialized)
 - [ ] Expanded coverage: fund transfers, bill pay, transaction search
