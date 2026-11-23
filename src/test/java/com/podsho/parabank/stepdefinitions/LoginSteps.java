@@ -3,7 +3,6 @@ package com.podsho.parabank.stepdefinitions;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 
-import com.aventstack.extentreports.model.Test;
 import com.podsho.parabank.client.AccountService;
 import com.podsho.parabank.testdata.LoginCase;
 import com.podsho.parabank.testdata.TestData;

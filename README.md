@@ -131,8 +131,9 @@ The environment-variable form uppercases the key and replaces dots with undersco
 | `createAccount.feature` | 1 | `@createAccount` | Creating a CHECKING account from an existing funding account |
 | `accountLookUp.feature` | 1 outline (2 examples), 1 scenario | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400); the 200 response is validated against a JSON schema |
 | `depositValidAmount.feature` | 2 scenarios, 1 outline (2 examples) | `@deposit`, `@smoke`, `@regression`, `@known-defect` | Valid deposit: confirmation message, balance increases by exactly the amount, and the transaction row exists in the database. Deposit into a non-existent account: 400 with the "could not find account" message. Invalid amounts (`0.00`, `-50.00`): expected to be rejected, balance unchanged (see known defects) |
+| `security.feature` | 1 scenario | `@security`, `@known-defect` | Authorization: a logged-in customer must not be able to read an account owned by another customer (expects `403`; ParaBank returns `200`, see known defects) |
 
-The default run executes 8 scenarios plus a database connection smoke test (`DbConnectionTest`). The 2 `@known-defect` examples run only on request.
+The default run executes 8 scenarios plus a database connection smoke test (`DbConnectionTest`). The `@known-defect` scenarios (the 2 invalid-deposit examples and the authorization check) run only on request.
 
 ### Traceability
 
@@ -148,6 +149,7 @@ Every scenario carries one unique `@PB-nnn` tag, written in the style of a Jira 
 | `PB-401` | Customer deposits a valid amount (API and database checked) | `POST /deposit` | `@deposit`, `@smoke`, `@regression` | Active |
 | `PB-402` | Customer cannot deposit an invalid amount (`0.00`, `-50.00`) | `POST /deposit` | `@deposit`, `@negative`, `@known-defect` | Known defect: ParaBank accepts these |
 | `PB-403` | Customer cannot deposit into a non-existent account | `POST /deposit` | `@deposit`, `@negative` | Active |
+| `PB-501` | A customer cannot read another customer's account | `GET /accounts/{id}` | `@security`, `@known-defect` | Known defect: ParaBank returns 200 |
 
 The deposit feature creates its own checking account in a `Background` step, so it never depends on the state of a shared seed account, and it asserts the *change* in balance instead of an absolute value.
 
@@ -160,6 +162,8 @@ These are findings about the system under test, not framework bugs.
 | Finding | Evidence | Test |
 | --- | --- | --- |
 | `/deposit` accepts zero and negative amounts | HTTP 200 for `amount=0.0` and `amount=-50.0`; the `-50.0` call lowered the account balance by 50 (a deposit acting as a withdrawal) | `Customer cannot deposit an invalid amount`, tagged `@known-defect` |
+| No authorization: any caller can read another customer's account | `GET /accounts/13455` returns `200` and the account data although it belongs to customer 12323, not the logged-in customer (John, 12212). A secure API returns `403` | `A customer cannot read another customer's account` (`@PB-501`), tagged `@known-defect` |
+| No authentication on data endpoints | `GET /customers/12212` and `GET /accounts/{id}` return `200` with no credentials at all. Only `/login` checks anything, and it issues no token or session, so later requests cannot carry an identity | Observed manually; no dedicated test yet |
 | Login credentials travel in the URL | `GET /login/{username}/{password}` | Observed in `LoginSteps`; no dedicated test yet |
 
 The deposit scenario is written for the **correct** behaviour and quarantined with a tag, so CI stays meaningful and the test starts guarding the behaviour as soon as the API is fixed. Run it on demand to see the failure:
@@ -203,7 +207,7 @@ src/
     │   ├── runners/
     │   │   ├── TestRunner.java           # Cucumber + TestNG entry point
     │   │   └── FailedTestRunner.java     # Re-runs scenarios that failed last time
-    │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit, CommonSteps (shared steps)
+    │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit, Security, CommonSteps (shared steps)
     └── resources/
         ├── features/                     # Gherkin specifications
         ├── testdata/invalidLogins.json   # Bad credential pairs used by the negative login outline
