@@ -22,6 +22,8 @@ public class AccountService {
 
     private final ApiClient client;
 
+    private static final Object CREATE_LOCK = new Object();
+
     public AccountService(ApiClient client) {
         this.client = client;
     }
@@ -95,7 +97,13 @@ public class AccountService {
         params.put("newAccountType", accountType.getCode());
         params.put("fromAccountId", fromAccountId);
 
-        Response createResponse = client.postWithParams(Endpoints.CREATE_ACCOUNT, params);
+        Response createResponse;
+
+        // ParaBank's createAccount fails intermittently when called concurrently,
+        // so account creation is serialized while scenarios still run in parallel.
+        synchronized (CREATE_LOCK) {
+            createResponse = client.postWithParams(Endpoints.CREATE_ACCOUNT, params);
+        }
 
         requireOk(createResponse, "Create account");
         return createResponse;
