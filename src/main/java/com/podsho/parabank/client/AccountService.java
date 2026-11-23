@@ -20,12 +20,18 @@ import io.restassured.response.Response;
  */
 public class AccountService {
 
+    private final ApiClient client;
+
+    public AccountService(ApiClient client) {
+        this.client = client;
+    }
+
     /**
      * @return the current balance of the account
      * @throws IllegalStateException if the lookup does not return 200
      */
     public BigDecimal getBalance(String accountId) {
-        Response getResponse =getAccount(accountId);
+        Response getResponse = getAccount(accountId);
         requireOk(getResponse, "Get balance");
 
         // Built from text so the exact decimal value survives; a double would not.
@@ -41,15 +47,15 @@ public class AccountService {
         Map<String, Object> params = new HashMap<>();
         params.put("accountId", accountId);
         params.put("amount", amount);
-        return ApiClient.postWithParams("/deposit", params);
+        return client.postWithParams("/deposit", params);
     }
 
-    public Response getAccount(String accountId){
-        return ApiClient.get("/accounts/" + accountId);
+    public Response getAccount(String accountId) {
+        return client.get("/accounts/" + accountId);
     }
 
-    public Response loginRaw(String username, String password){
-        return ApiClient.get("/login/" + username +"/" + password);
+    public Response loginRaw(String username, String password) {
+        return client.get("/login/" + username + "/" + password);
     }
 
     /**
@@ -70,7 +76,7 @@ public class AccountService {
      */
     public String getFirstAccountId(String customerId) {
 
-        Response accountsResponse = ApiClient.get("/customers/" + customerId + "/accounts");
+        Response accountsResponse = client.get("/customers/" + customerId + "/accounts");
         requireOk(accountsResponse, "Listing accounts");
 
         return accountsResponse.jsonPath().getString("[0].id");
@@ -89,7 +95,7 @@ public class AccountService {
         params.put("newAccountType", accountType.getCode());
         params.put("fromAccountId", fromAccountId);
 
-        Response createResponse = ApiClient.postWithParams("/createAccount", params);
+        Response createResponse = client.postWithParams("/createAccount", params);
 
         requireOk(createResponse, "Create account");
         return createResponse;

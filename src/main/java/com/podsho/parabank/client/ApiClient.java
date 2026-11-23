@@ -14,29 +14,37 @@ import io.restassured.specification.RequestSpecification;
 
 public class ApiClient {
 
-    private static final String BASE_URL = ConfigReader.getProperty("base.url");
+    private final String baseUrl;
+
+    public ApiClient() {
+        this(ConfigReader.getProperty("base.url"));
+    }
+
+    ApiClient(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
 
     /*
-     * Built fresh for every call, not cached in a static field: the logging
+     * Built fresh for every call, not cached in a field: the logging
      * filters write into the current thread's ApiLogContext buffer, which Hooks
      * detaches after each scenario. A reused spec would keep writing to a dead
      * buffer and failure reports would come out empty.
      */
-    private static RequestSpecification baseRequest() {
+    private RequestSpecification baseRequest() {
         return given()
                 .filter(new RequestLoggingFilter(ApiLogContext.stream()))
                 .filter(new ResponseLoggingFilter(ApiLogContext.stream()))
-                .baseUri(BASE_URL)
+                .baseUri(baseUrl)
                 .accept("application/json");
     }
 
-    public static Response get(String endpoint) {
+    public Response get(String endpoint) {
         return baseRequest()
                 .when()
                 .get(endpoint);
     }
 
-    public static Response post(String endpoint, Object requestBody) {
+    public Response post(String endpoint, Object requestBody) {
         return baseRequest()
                 .contentType("application/json")
                 .body(requestBody)
@@ -44,7 +52,7 @@ public class ApiClient {
                 .post(endpoint);
     }
 
-    public static Response put(String endpoint, Object requestBody) {
+    public Response put(String endpoint, Object requestBody) {
         return baseRequest()
                 .contentType("application/json")
                 .body(requestBody)
@@ -52,13 +60,13 @@ public class ApiClient {
                 .put(endpoint);
     }
 
-    public static Response delete(String endpoint) {
+    public Response delete(String endpoint) {
         return baseRequest()
                 .when()
                 .delete(endpoint);
     }
 
-    public static Response postWithParams(String endpoint, Map<String, Object> queryParams) {
+    public Response postWithParams(String endpoint, Map<String, Object> queryParams) {
         return baseRequest()
                 .queryParams(queryParams)
                 .when()
