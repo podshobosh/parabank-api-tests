@@ -1,13 +1,11 @@
 package com.podsho.parabank.utils;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigReader {
     private static final Properties properties = new Properties();
-    private static final String CONFIG_PATH = "src/main/java/com/podsho/parabank/resources/config/config.properties";
 
     private ConfigReader() {
     }
@@ -17,20 +15,15 @@ public class ConfigReader {
     }
 
     private static void loadProperties() {
-        try (InputStream classpathStream = ConfigReader.class.getClassLoader()
+        try (InputStream in = ConfigReader.class.getClassLoader()
                 .getResourceAsStream("config/config.properties")) {
-            if (classpathStream != null) {
-                properties.load(classpathStream);
-                return;
+            if (in == null) {
+                throw new IllegalStateException("config/config.properties not found in class path");
             }
+            properties.load(in);
+
         } catch (IOException e) {
             throw new RuntimeException("Failed to load classpath config/config.properties", e);
-        }
-
-        try (FileInputStream fileInputStream = new FileInputStream(CONFIG_PATH)) {
-            properties.load(fileInputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load configuration file: " + CONFIG_PATH, e);
         }
     }
 
