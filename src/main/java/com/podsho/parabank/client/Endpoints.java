@@ -5,6 +5,7 @@ public final class Endpoints {
 
     public static final String DEPOSIT = "/deposit";
     public static final String CREATE_ACCOUNT = "/createAccount";
+    public static final String TRANSFER = "/transfer";
 
     public static String account(String accountId) {
         return "/accounts/" + accountId;

@@ -121,4 +121,13 @@ public class AccountService {
         }
     }
 
+    public Response transfer(BigDecimal amount, String fromAccountId, String toAccountId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("fromAccountId", fromAccountId);
+        params.put("toAccountId", toAccountId);
+        params.put("amount", amount);
+
+        return client.postWithParams(Endpoints.TRANSFER, params);
+    }
+
 }

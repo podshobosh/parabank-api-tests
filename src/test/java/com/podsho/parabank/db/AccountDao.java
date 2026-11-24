@@ -28,7 +28,7 @@ public class AccountDao {
                 if (rs.next()) {
                     return rs.getBigDecimal("BALANCE");
                 }
-                throw new IllegalStateException("No acount found with this id: " + accountId);
+                throw new IllegalStateException("No account found with this id: " + accountId);
             }
         }
     }

@@ -131,9 +131,10 @@ The environment-variable form uppercases the key and replaces dots with undersco
 | `createAccount.feature` | 1 | `@createAccount` | Creating a CHECKING account from an existing funding account |
 | `accountLookUp.feature` | 1 outline (2 examples), 1 scenario | `@lookUp` | Account lookup by ID — existing (200) and non-existent (400); the 200 response is validated against a JSON schema |
 | `depositValidAmount.feature` | 2 scenarios, 1 outline (2 examples) | `@deposit`, `@smoke`, `@regression`, `@known-defect` | Valid deposit: confirmation message, balance increases by exactly the amount, and the transaction row exists in the database. Deposit into a non-existent account: 400 with the "could not find account" message. Invalid amounts (`0.00`, `-50.00`): expected to be rejected, balance unchanged (see known defects) |
+| `transfer.feature` | 1 scenario | `@transfer` | Transfer between two of a customer's own accounts: confirmation message, the source balance drops by the amount and the destination balance rises by the amount. Both accounts are created per scenario, so nothing depends on seeded balances |
 | `security.feature` | 1 scenario | `@security`, `@known-defect` | Authorization: a logged-in customer must not be able to read an account owned by another customer (expects `403`; ParaBank returns `200`, see known defects) |
 
-The default run executes 8 scenarios plus a database connection smoke test (`DbConnectionTest`). The `@known-defect` scenarios (the 2 invalid-deposit examples and the authorization check) run only on request.
+The default run executes 9 scenarios plus a database connection smoke test (`DbConnectionTest`). The `@known-defect` scenarios (the 2 invalid-deposit examples and the authorization check) run only on request.
 
 ### Traceability
 
@@ -150,6 +151,7 @@ Every scenario carries one unique `@PB-nnn` tag, written in the style of a Jira 
 | `PB-402` | Customer cannot deposit an invalid amount (`0.00`, `-50.00`) | `POST /deposit` | `@deposit`, `@negative`, `@known-defect` | Known defect: ParaBank accepts these |
 | `PB-403` | Customer cannot deposit into a non-existent account | `POST /deposit` | `@deposit`, `@negative` | Active |
 | `PB-501` | A customer cannot read another customer's account | `GET /accounts/{id}` | `@security`, `@known-defect` | Known defect: ParaBank returns 200 |
+| `PB-601` | Customer transfers funds between their own accounts (both balances checked) | `POST /transfer` | `@transfer` | Active |
 
 The deposit feature creates its own checking account in a `Background` step, so it never depends on the state of a shared seed account, and it asserts the *change* in balance instead of an absolute value.
 
@@ -207,7 +209,7 @@ src/
     │   ├── runners/
     │   │   ├── TestRunner.java           # Cucumber + TestNG entry point
     │   │   └── FailedTestRunner.java     # Re-runs scenarios that failed last time
-    │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit, Security, CommonSteps (shared steps)
+    │   └── stepdefinitions/              # Login, CreateAccount, AccountLookUp, Deposit, Transfer, Security, CommonSteps (shared steps)
     └── resources/
         ├── features/                     # Gherkin specifications
         ├── testdata/invalidLogins.json   # Bad credential pairs used by the negative login outline

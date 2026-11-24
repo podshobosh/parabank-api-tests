@@ -18,6 +18,43 @@ public class ScenarioContext {
     private BigDecimal balance;
     private BigDecimal amount;
 
+    private String firstAccountId;
+    private String secondAccountId;
+    private BigDecimal firstBalance;
+    private BigDecimal secondBalance;
+
+    public String getFirstAccountId() {
+        return firstAccountId;
+    }
+
+    public void setFirstAccountId(String firstAccountId) {
+        this.firstAccountId = firstAccountId;
+    }
+
+    public String getSecondAccountId() {
+        return secondAccountId;
+    }
+
+    public void setSecondAccountId(String secondAccountId) {
+        this.secondAccountId = secondAccountId;
+    }
+
+    public BigDecimal getFirstBalance() {
+        return firstBalance;
+    }
+
+    public void setFirstBalance(BigDecimal firstBalance) {
+        this.firstBalance = firstBalance;
+    }
+
+    public BigDecimal getSecondBalance() {
+        return secondBalance;
+    }
+
+    public void setSecondBalance(BigDecimal secondBalance) {
+        this.secondBalance = secondBalance;
+    }
+
     public String getCustomerId() {
         return customerId;
     }
