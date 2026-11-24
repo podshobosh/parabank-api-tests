@@ -109,7 +109,7 @@ mvn clean test -Dparallel.threads=8
 
 Scenarios stay independent because each gets its own `ScenarioContext` from PicoContainer and its own `ThreadLocal` API log buffer.
 
-**ParaBank is not safe under concurrent `createAccount` calls.** Firing six at once against a clean instance returned `400 Could not create new account` for some of them, while sequential calls always succeeded. `AccountService.createAccount` therefore holds a lock around that single call, so account creation is serialized while everything else (deposits, lookups, database checks) still runs in parallel. If a new intermittent failure ever shows up, check which other ParaBank endpoints are being called concurrently.
+**ParaBank is not safe under concurrent writes.** Firing six `createAccount` calls at once against a clean instance returned `400 Could not create new account` for some of them, while sequential calls always succeeded. Locking only account creation was not enough: once transfers were added, creates collided with other threads' deposits and transfers and failed intermittently in CI. `AccountService` therefore runs every state-changing call (`createAccount`, `deposit`, `transfer`) behind one shared `WRITE_LOCK`, so writes are serialized while reads, lookups, assertions and database checks still run in parallel. If a new intermittent failure ever shows up, check whether a new write endpoint is missing from the lock.
 
 ### Pointing at a different environment
 
@@ -304,5 +304,5 @@ A failed scenario therefore carries the exact HTTP exchange that caused it — n
 - [ ] `Jenkinsfile` alongside the GitHub Actions workflow
 - [x] Jira-style tags and a traceability table (requirement to scenario)
 - [ ] Maven wrapper (`mvnw`) so the repo is clone-and-run without a local Maven install
-- [x] Parallel execution via surefire thread configuration (account creation serialized)
+- [x] Parallel execution via surefire thread configuration (writes serialized)
 - [ ] Expanded coverage: fund transfers, bill pay, transaction search
