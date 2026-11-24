@@ -22,7 +22,7 @@ public class AccountService {
 
     private final ApiClient client;
 
-    private static final Object CREATE_LOCK = new Object();
+    private static final Object WRITE_LOCK = new Object();
 
     public AccountService(ApiClient client) {
         this.client = client;
@@ -49,7 +49,11 @@ public class AccountService {
         Map<String, Object> params = new HashMap<>();
         params.put("accountId", accountId);
         params.put("amount", amount);
-        return client.postWithParams(Endpoints.DEPOSIT, params);
+
+        synchronized (WRITE_LOCK) {
+            return client.postWithParams(Endpoints.DEPOSIT, params);
+        }
+
     }
 
     public Response getAccount(String accountId) {
@@ -101,7 +105,7 @@ public class AccountService {
 
         // ParaBank's createAccount fails intermittently when called concurrently,
         // so account creation is serialized while scenarios still run in parallel.
-        synchronized (CREATE_LOCK) {
+        synchronized (WRITE_LOCK) {
             createResponse = client.postWithParams(Endpoints.CREATE_ACCOUNT, params);
         }
 
@@ -127,7 +131,10 @@ public class AccountService {
         params.put("toAccountId", toAccountId);
         params.put("amount", amount);
 
-        return client.postWithParams(Endpoints.TRANSFER, params);
+        synchronized (WRITE_LOCK) {
+            return client.postWithParams(Endpoints.TRANSFER, params);
+        }
+
     }
 
 }
